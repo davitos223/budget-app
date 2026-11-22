@@ -14,6 +14,11 @@ A private budgeting web app for the phone and PC: income, bills, spending and wh
 
 ## Features
 
+- **Overview:** coloured header with a total card (income, bills, spending, savings, what's left), tiles for still-to-pay / safe-to-spend / saved, "going out" and "left over" rings with change vs last month.
+- **Upcoming payments:** unpaid bills this month with "in 2 days" / "today" / "3 days late" and Autopay.
+- **Spending limits:** a monthly limit per category ("€125 left of €500", two-tone bar for paid vs still to pay, "You're doing great 👍" / "Getting close" / "Over by …", "Healthy limits 3/4"). Shows the last 3 months' average when setting one.
+- **Where it goes:** category donut; shared budgets also show who added what.
+- **Phone layout:** bottom tab bar and a + button for quick adding.
 - **Month view:** "Left after bills" in large type, still to pay, what's left after spending and savings, and how much is safe to spend per day for the rest of the month.
 - **Repeating items:** add a bill once and choose how often it comes: every month, 2, 3 or 6 months, every year, or just once. Optional last month (e.g. when a loan ends).
 - **Tick bills as paid.** Bills marked *Paid automatically* (direct debit) tick themselves on their due day.
@@ -53,4 +58,5 @@ Without a config (`null`), the app runs in **demo mode**: no login, data only in
 - Local preview: `py -3.12 -m http.server 5174 --bind 127.0.0.1 --directory docs` → <http://localhost:5174>.
   With a real config, local testing signs in to the **real** project.
 - On every release, bump the version in **three places together**: `APP_VERSION` in `docs/index.html`, the `?v=` on the `config.js`/`cloud.js` script tags, and `version:` in `docs/cloud.js`.
+- `http://localhost:5174/?demo` forces demo mode on the local server only (real account untouched).
 - Screenshots for docs must use the demo mode with invented data, never a real budget.
