@@ -38,7 +38,7 @@ A private budgeting web app for the phone and PC: income, bills, spending and wh
    **Rules** tab → paste all of `firestore.rules` → **Publish**.
 5. **Project settings (gear) → Your apps → Web (`</>`)** → register app "Budget" (no hosting) → copy the `firebaseConfig` object into `docs/config.js` as `window.BUDGET_FIREBASE = { ... };`.
 6. In Google Cloud console → **APIs & Services → Credentials** → the "Browser key" → restrict it to HTTP referrers:
-   `davitos223.github.io/*`, `localhost:5174/*`, `<project-id>.firebaseapp.com/*`.
+   `davitos223.github.io/*`, `localhost:5174/*`, `budget-600b6.firebaseapp.com/*` (done 2026-11-22).
 
 Without a config (`null`), the app runs in **demo mode**: no login, data only in that browser.
 
