@@ -318,6 +318,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-
 .hscroll{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .hscroll::-webkit-scrollbar{display:none}
 .hscroll .chip2{flex:none;white-space:nowrap}
+/* with a mouse there's no sideways swipe: show all categories on several lines instead */
+@media (pointer:fine){ .hscroll{flex-wrap:wrap;overflow:visible;padding-bottom:2px} }
 #fSDL{display:none}
 .more{border:none;background:none;color:var(--accent);font-weight:700;padding:4px 0;margin:2px 0 8px}
 /* floating bottom bar (all sizes) */
@@ -360,8 +362,8 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
 .savempty>*{position:relative;z-index:1}
 .savempty .e{font-size:3.2em}
 </style>
-<script src="config.js?v=20261122h"></script>
-<script type="module" src="cloud.js?v=20261122h"></script>
+<script src="config.js?v=20261122i"></script>
+<script type="module" src="cloud.js?v=20261122i"></script>
 </head>
 <body>
 <div id="app"></div>
@@ -370,7 +372,7 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
 
 <script>
 "use strict";
-const APP_VERSION = "20261122h";
+const APP_VERSION = "20261122i";
 // demo mode: no Firebase config, or ?demo on a local test server (never touches the real account)
 const LOCAL = !window.BUDGET_FIREBASE || (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && /[?&]demo\b/.test(location.search));
 
