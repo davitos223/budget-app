@@ -26,7 +26,7 @@ async function connectStore(app, auth) {
     [k, v === null ? F.deleteField() : (v && typeof v === "object" && !Array.isArray(v)) ? nulls(v) : v]));
 
   Object.assign(window.Cloud, {
-    version: "20261122s",   // must match APP_VERSION in index.html
+    version: "20261122t",   // must match APP_VERSION in index.html
 
     watchProfile: (cb, err) => F.onSnapshot(F.doc(fs, "users", uid()), s => cb(s.exists() ? s.data() : {}), err),
     saveProfile: patch => F.setDoc(F.doc(fs, "users", uid()), nulls(patch), { merge: true }),
