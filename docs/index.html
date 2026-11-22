@@ -218,7 +218,7 @@ textarea{width:100%;min-height:70px;border:1px solid var(--line);border-radius:1
 .ib:hover{border-color:var(--accent)}
 .f{display:block;margin-bottom:12px}
 .f>span{display:block;font-size:.84em;font-weight:700;color:var(--muted);margin-bottom:4px}
-.f input[type=text],.f input[type=email],.f input[type=password],.f input[type=month],.f input[type=date],.f input[type=number],.f select,.inp{
+.f input:not([type=checkbox]):not([type=radio]):not([type=file]),.f select,.inp{
   width:100%;border:1px solid var(--line);border-radius:12px;background:var(--card2);padding:10px 12px;min-height:46px;-webkit-appearance:none;appearance:none}
 .f select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
   background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:32px}
@@ -259,8 +259,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-
 .err{color:var(--bad);font-size:.9em;min-height:1.2em;margin:4px 0 8px}
 .demo{background:#00000030;color:#fff;font-size:.78em;font-weight:700;text-align:center;padding:5px 10px}
 </style>
-<script src="config.js?v=20261122b"></script>
-<script type="module" src="cloud.js?v=20261122b"></script>
+<script src="config.js?v=20261122c"></script>
+<script type="module" src="cloud.js?v=20261122c"></script>
 </head>
 <body>
 <div id="app"></div>
@@ -269,7 +269,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-
 
 <script>
 "use strict";
-const APP_VERSION = "20261122b";
+const APP_VERSION = "20261122c";
 // demo mode: no Firebase config, or ?demo on a local test server (never touches the real account)
 const LOCAL = !window.BUDGET_FIREBASE || (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && /[?&]demo\b/.test(location.search));
 
