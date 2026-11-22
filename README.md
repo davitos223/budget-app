@@ -43,6 +43,8 @@ Enter your income and bills once, tick them off as you pay, and always know what
 - **Enter bills once.** Choose how often each one comes (every month, every 2, 3 or 6 months, every year, or just once), and optionally when it ends. It appears in every month on its own.
 - **Tick bills off.** Direct debits (*Autopay*) tick themselves on their due day.
 - **Upcoming payments** show "today", "in 2 days" or "3 days late", with overdue and due-soon warnings.
+- **Optional dates:** give anything a day as well as a month (a due day, a pay day or the date of a purchase), or just pick the month. Day, month and year are dropdowns, so there's nothing to type.
+- **Fill in earlier months:** started mid-year? One tap counts your current income (and bills) in the months before, so past months and the Year view are right. Past bills are ticked as paid.
 - **Just this month:** change a bill's amount or skip it for one month without touching the others.
 - **Spending limits** for each category, e.g. "€194 left of €600", with "You're doing great 👍", "Getting close" or "Over by …".
 - **Savings goals** with a target and a date. The app works out how much to put aside each month, and money you put in counts in that month's budget.
@@ -77,7 +79,9 @@ Give categories such as Groceries or Eating out a monthly limit. Each limit show
 
 <img src="screenshots/phone-add.png" width="32%" alt="Phone: add spending">
 
-On the phone, the **+** button adds spending, a bill or income in a few taps. Amounts work with a comma or a dot.
+On the phone, the **+** button adds spending, a bill or income in a few taps. Amounts work with a comma or a dot. The date is optional: pick a day, month and year, or leave the day on “—” to just use the month.
+
+If a month has no income yet because you only started using the app later, the month shows a **Fill in from your current income** button. The same tool is under **Income → Earlier months**.
 
 ### The year
 
