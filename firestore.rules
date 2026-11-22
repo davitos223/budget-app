@@ -1,0 +1,50 @@
+rules_version = '2';
+// Budget app: nobody can read or write anything unless signed in, and then only
+//  - their own users/{uid} settings doc, and
+//  - budgets whose `members` list contains them (plus everything inside those budgets).
+// A "personal" budget can never have anyone but its owner as a member.
+// Only the owner can add/remove people or delete a budget; a member may remove themselves.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function me() { return request.auth.uid; }
+    function signedIn() { return request.auth != null; }
+    function budget(b) { return get(/databases/$(database)/documents/budgets/$(b)).data; }
+
+    match /users/{uid} {
+      allow read, write: if signedIn() && me() == uid;
+    }
+
+    match /budgets/{b} {
+      allow read: if signedIn() && me() in resource.data.members;
+
+      allow create: if signedIn()
+        && request.resource.data.owner == me()
+        && request.resource.data.members == [me()]
+        && request.resource.data.kind in ['personal', 'shared'];
+
+      allow update: if signedIn() && (
+        // owner: anything, but stays owner, stays a member, kind fixed, personal stays private
+        (resource.data.owner == me()
+          && request.resource.data.owner == me()
+          && me() in request.resource.data.members
+          && request.resource.data.kind == resource.data.kind
+          && (resource.data.kind != 'personal' || request.resource.data.members == [me()]))
+        // member: may edit names/currency/categories, never owner/members/kind
+        || (me() in resource.data.members
+          && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['owner', 'members', 'kind']))
+        // member leaving: only removes themselves
+        || (me() in resource.data.members
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'memberNames'])
+          && request.resource.data.members == resource.data.members.removeAll([me()]))
+      );
+
+      allow delete: if signedIn() && resource.data.owner == me();
+
+      match /{col}/{id} {
+        allow read, write: if signedIn()
+          && col in ['entries', 'months', 'goals']
+          && me() in budget(b).members;
+      }
+    }
+  }
+}
