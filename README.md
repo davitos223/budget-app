@@ -173,6 +173,8 @@ Data layout: `budgets/{id}` (name, kind, owner, members, currency, categories, l
 ## For developers
 
 - **Run locally:** `py -3.12 -m http.server 5174 --bind 127.0.0.1 --directory docs`, then open <http://localhost:5174>. This uses the real project, so add **`?demo`** (<http://localhost:5174/?demo>) for a demo mode that never touches it. Demo mode only works on localhost.
+- **Tests:** `node tools/test.mjs` runs 62 checks of the money maths on a demo copy (never the real database). Run it before every release.
+- **How it's built:** see [ARCHITECTURE.md](ARCHITECTURE.md) for the data, the calculation rules and the access rules.
 - **Screenshots:** `node tools/screenshots.mjs` (Node 22+ and Edge or Chrome) rebuilds everything in `screenshots/` from a demo copy with invented data. Never use a real budget for screenshots.
 - **Releases:** bump the version in **three places together**: `APP_VERSION` in `docs/index.html`, the `?v=` on the `config.js` / `cloud.js` script tags, and `version:` in `docs/cloud.js`.
 - **Firebase setup** (only for a new project): Email/Password sign-in with *create (sign-up)* and *delete* turned off, Firestore in production mode with `firestore.rules` published, and the browser API key restricted to the site's addresses (`davitos223.github.io/*`, `localhost:5174/*`, `<project>.firebaseapp.com/*`).
