@@ -60,7 +60,7 @@ button{cursor:pointer}
 .money small{font-size:.72em;font-weight:inherit;opacity:.85}
 body.hide .money{filter:blur(.42em);user-select:none}
 .muted{color:var(--muted)} .good{color:var(--good)} .bad{color:var(--bad)} .warn{color:var(--warn)}
-.small{font-size:.86em}
+.small{font-size:.9em}
 
 /* ---------- coloured header ---------- */
 .head{background:linear-gradient(150deg,var(--head1),var(--head2));color:#fff;padding-top:env(safe-area-inset-top)}
@@ -337,7 +337,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-
 .fnav button .lb{display:block;white-space:nowrap}
 .fnav button.on{background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#7dd3fc));color:#fff}
 .fnav .plus{flex:none;width:54px;background:var(--text);color:var(--bg);font-size:26px;font-weight:600}
-body{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
+body{padding-bottom:calc(120px + env(safe-area-inset-bottom))}
 .bnav,.fab,.tabs{display:none!important}
 @media (max-width:420px){ .kpi .kv{font-size:1.1em} .gaugecard .gv{font-size:1.85em} }
 
@@ -368,9 +368,18 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
 .savempty::after{width:120px;height:120px;bottom:-50px;left:-40px;background:color-mix(in srgb,var(--save) 18%,transparent)}
 .savempty>*{position:relative;z-index:1}
 .savempty .e{font-size:3.2em}
+
+/* polish: bigger secondary text, goal history bars */
+.item .meta,.row2 .mn span,.kpi .ks,.tile .s,.gs,.ks{font-size:.86em}
+.kpi .kh,.mrow .k,.fc span{font-size:.88em}
+.gbars{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;align-items:end;height:118px;padding:4px 2px 0}
+.gbars>div{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;height:100%}
+.gbars i{display:block;width:70%;border-radius:6px}
+.gbars b{font-size:.74em;color:var(--muted)}
+.gbars .gv2{font-size:.7em;font-weight:800;color:var(--muted);white-space:nowrap}
 </style>
-<script src="config.js?v=20261122k"></script>
-<script type="module" src="cloud.js?v=20261122k"></script>
+<script src="config.js?v=20261122l"></script>
+<script type="module" src="cloud.js?v=20261122l"></script>
 </head>
 <body>
 <div id="app"></div>
@@ -379,7 +388,7 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
 
 <script>
 "use strict";
-const APP_VERSION = "20261122k";
+const APP_VERSION = "20261122l";
 // demo mode: no Firebase config, or ?demo on a local test server (never touches the real account)
 const LOCAL = !window.BUDGET_FIREBASE || (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && /[?&]demo\b/.test(location.search));
 
@@ -594,8 +603,8 @@ function insights(m) {
     const diffs = [...new Set([...Object.keys(cur), ...Object.keys(prev)])].map(id => ({ id, d: r2((cur[id] || 0) - (prev[id] || 0)), was: prev[id] || 0 }));
     const up = diffs.filter(x => x.d >= 20 && (x.was === 0 || x.d / x.was >= .1)).sort((a, z) => z.d - a.d)[0];
     const down = diffs.filter(x => x.d <= -20 && x.was > 0 && -x.d / x.was >= .1).sort((a, z) => a.d - z.d)[0];
-    if (up) out.push({ key: "up:" + up.id, icon: "📈", tone: "warn", html: `<b>${esc(cat(up.id).name)}</b>: ${R(up.d)} more than last month.` });
-    if (down) out.push({ key: "down:" + down.id, icon: "📉", tone: "good", html: `<b>${esc(cat(down.id).name)}</b>: ${R(down.d)} less than last month.` });
+    if (up) out.push({ key: "up:" + up.id, icon: "📈", tone: "warn", html: `Spending on <b>${esc(cat(up.id).name)}</b> is ${R(up.d)} higher than last month.` });
+    if (down) out.push({ key: "down:" + down.id, icon: "📉", tone: "good", html: `Spending on <b>${esc(cat(down.id).name)}</b> is ${R(down.d)} lower than last month.` });
     const pct = change(t.out, p.out);
     if (pct != null && Math.abs(pct) >= 5) out.push({ key: "out", icon: pct < 0 ? "✅" : "⚠️", tone: pct < 0 ? "good" : "warn", html: `Everything going out is <b>${pct < 0 ? "down" : "up"} ${Math.abs(pct)}%</b> on last month.` });
     const sv = r2(t.saved - p.saved);
@@ -607,8 +616,13 @@ function insights(m) {
     else if (f >= .8) out.push({ key: "near:" + L.id, icon: "⏳", tone: "warn", html: `You're at <b>${Math.round(f * 100)}%</b> of your ${esc(L.c.name)} limit.` });
   }
   const top = Object.entries(cur).sort((a, z) => z[1] - a[1])[0];
-  if (top && t.out > 0) out.push({ key: "top:" + top[0], icon: "🏠", tone: "", html: `<b>${esc(cat(top[0]).name)}</b> is your biggest cost this month (${Math.round(top[1] / t.out * 100)}% of everything going out).` });
-  return out.slice(0, 4);
+  if (top && t.out > 0) out.push({ key: "top:" + top[0], icon: "🏠", tone: "", html: `<b>${esc(cat(top[0]).name)}</b> takes ${Math.round(top[1] / t.out * 100)}% of everything going out this month.` });
+  // the one that leads to a decision comes first: where this month is heading
+  const fc = forecast(m);
+  if (fc && (fc.income || fc.bills || fc.spent)) out.unshift(fc.end >= 0
+    ? { key: "fc", icon: "🎯", tone: "good", html: `You're on track to finish ${esc(monthName(m, { month: "long" }))} with <b>${R(fc.end)} left</b>.` }
+    : { key: "fc", icon: "⚠️", tone: "bad", html: `At this rate ${esc(monthName(m, { month: "long" }))} ends <b>${R(fc.end)} short</b>. Holding back on spending would close the gap.` });
+  return out.slice(0, 5);
 }
 // every bill in a calendar year: how often, which months, and its total (one-month changes and skips included)
 function billsPlan(year) {
@@ -773,6 +787,7 @@ function renderSummary(m, t, items, l, b) {
     <div class="ttl"><b>This month's money</b><span class="muted small">${Math.round(frac * 100)}% used</span></div>
     <div class="mrow"><span><span class="k">Going out</span><br><span class="v">${money(used)}</span></span><span style="text-align:right"><span class="k">Coming in</span><br><span class="v">${money(pot)}</span></span></div>
     <div class="mbar"><i style="width:${frac * 100}%;${t.left < 0 ? "background:var(--bad)" : ""}"></i></div>
+    ${prev.income || prev.out ? `<div class="muted small" style="margin-bottom:6px">Last month: ${money(prev.out + prev.saved, { round: true })} out of ${money(prev.income + Math.max(0, prev.carry), { round: true })} · ${money(prev.left, { round: true })} left ${chip(change(t.left, prev.left), false)}</div>` : ""}
     <div class="small" style="font-weight:600">${t.left >= 0 ? `<b class="good">${money(t.left)}</b> left after bills, spending and savings.` : `<b class="bad">${money(-t.left)}</b> more going out than coming in.`}</div>
   </div>`;
 
@@ -878,7 +893,7 @@ function renderCalendar(m, items) {
   return `<div><div class="sec"><span>Calendar</span></div><div class="card">
     <div class="cal">${["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map(w => `<span class="wd">${w}</span>`).join("")}${cells.join("")}</div>
     <div class="dots" style="margin-top:10px"><span><i style="background:var(--out)"></i>Bill</span><span><i style="background:var(--bad)"></i>Overdue</span><span><i style="background:var(--accent)"></i>Income</span><span><i style="background:var(--spend)"></i>Spending</span><span><i style="background:var(--save)"></i>Savings</span></div>
-    ${sel ? `<div class="ttl" style="margin-top:14px"><b>${esc(selLabel)}</b></div>${list.length ? list.map(row).join("") : `<p class="muted small" style="margin:2px 0">Nothing on this day.</p>`}` : `<p class="muted small" style="margin:12px 0 0">Tap a day to see what's on it.</p>`}
+    ${sel ? `<div class="ttl" style="margin-top:14px"><b>${esc(selLabel)}</b>${list.length ? `<span class="muted small" style="font-weight:700">${(() => { const inn = sum(list.filter(i => i.type === "income"), i => i.amt), outv = sum(list.filter(i => i.type !== "income"), i => i.amt); return [inn ? `<span class="good">+${money(inn, { raw: true })}</span>` : "", outv ? `−${money(outv, { raw: true })}` : ""].filter(Boolean).join(" · "); })()}</span>` : ""}</div>${list.length ? list.map(row).join("") : `<p class="muted small" style="margin:2px 0">Nothing on this day.</p>`}` : `<p class="muted small" style="margin:12px 0 0">Tap a day to see what's on it.</p>`}
     ${noDay.length ? `<p class="muted small" style="margin:12px 0 0"><b>No set day:</b> ${noDay.slice(0, 8).map(i => esc(i.name)).join(", ")}${noDay.length > 8 ? ` and ${noDay.length - 8} more` : ""}</p>` : ""}
   </div></div>`;
 }
@@ -900,9 +915,20 @@ function renderDetails(m, t, items, l, b) {
       `<div class="item" style="cursor:default">${avatar(u)}<div class="main"><div class="name">${esc(nameOf(u))}</div></div><div class="amt">${money(v)}</div></div>`).join("")}</div></div>`;
   }
   const md = S.months[m] || {};
+  const glance = `<div><div class="sec"><span>${esc(monthName(m, { month: "long" }))} at a glance</span></div><div class="card"><div class="fc" style="font-size:.95em">
+      <div><span>Coming in</span><b class="good">${money(t.income + t.carry)}</b></div>
+      <div><span>Bills (${t.billCount - t.unpaidCount} of ${t.billCount} paid)</span><b>− ${money(t.bills)}</b></div>
+      <div><span>Spending (${spend.length} item${spend.length === 1 ? "" : "s"})</span><b>− ${money(t.spend)}</b></div>
+      ${t.saved ? `<div><span>Into savings</span><b>− ${money(t.saved)}</b></div>` : ""}
+      <div style="border-top:1px solid var(--line);padding-top:6px"><span style="color:var(--text);font-weight:800">Left</span><b class="${t.left < 0 ? "bad" : "good"}">${money(t.left)}</b></div>
+    </div></div></div>`;
+  const notes = `<div><div class="sec">Notes for ${esc(monthName(m, { month: "long" }))}</div><div class="card"><textarea id="note" placeholder="Anything to remember this month…">${esc(md.note || "")}</textarea></div></div>`;
   return `<div class="grid two">
+    <div class="grid">${renderCalendar(m, items)}</div>
+    <div class="grid">${glance}${notes}</div>
+  </div>
+  <div class="grid two" style="margin-top:14px">
     <div class="grid">
-      ${renderCalendar(m, items)}
       ${section("Bills", bills, "bill", t.bills, "billsCard", bills.length ? `<button class="lk" data-act="sort">${({ due: "By date", amount: "By amount", name: "A–Z", unpaid: "Unpaid first" })[l.billSort] || "By date"}</button>` : "")}
       ${section("Spending", spend, "spend", t.spend, "spendCard")}
     </div>
@@ -910,7 +936,6 @@ function renderDetails(m, t, items, l, b) {
       ${section("Income", inc, "income", t.income, "incCard", `<button class="lk" data-act="backfill" data-type="income">Earlier months</button>`)}
       ${moves.length ? `<div><div class="sec"><span>Into savings · ${money(t.saved, { round: true })}</span></div><div class="card flat">${moves.map(d => `<div class="item" data-act="gview" data-id="${esc(d.goal.id)}"><div class="emo" style="background:${d.goal.color || "#8b5cf6"}1f">${esc(d.goal.emoji || "🐷")}</div><div class="main"><div class="name">${esc(d.goal.name)}</div><div class="meta">${esc(new Date(d.d).toLocaleDateString("en-GB", { day: "numeric", month: "short" }))}${b?.kind === "shared" && d.by ? " · by " + esc(whoName(d.by)) : ""}</div></div><div class="amt">${money(num(d.a))}</div></div>`).join("")}</div></div>` : ""}
       ${whoCard}
-      <div><div class="sec">Notes for ${esc(monthName(m, { month: "long" }))}</div><div class="card"><textarea id="note" placeholder="Anything to remember this month…">${esc(md.note || "")}</textarea></div></div>
     </div>
   </div>`;
 }
@@ -971,6 +996,8 @@ function renderYear() {
 }
 
 function goalSaved(g) { return sum(g.moves || [], d => num(d.a)); }
+// net money into a goal per month, oldest first: [{ m, v }]
+function goalMonths(g, n = 6) { const end = mi(thisMonth()); return Array.from({ length: n }, (_, k) => { const m = mk(end - n + 1 + k); return { m, v: sum((g.moves || []).filter(d => (d.d || "").startsWith(m)), d => num(d.a)) }; }); }
 function renderGoals() {
   const gs = [...S.goals].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
   const total = sum(gs, goalSaved), target = sum(gs, g => num(g.target));
@@ -985,6 +1012,7 @@ function renderGoals() {
         <div class="top"><span class="emo" style="background:${g.color || "#8b5cf6"}1f">${esc(g.emoji || "🐷")}</span><b>${esc(g.name)}</b>${tg && s >= tg ? "🎉" : ""}</div>
         <div class="big">${money(s)} ${tg ? `<span class="of">of ${money(tg, { round: true })}</span>` : ""}</div>
         ${tg ? `<div class="bar"><i style="width:${pct}%;background:${g.color || "#8b5cf6"}"></i></div>` : ""}
+        ${(() => { const now = goalMonths(g, 1)[0].v; return now ? `<div class="muted small" style="margin:-2px 0 8px;font-weight:700"><span class="${now > 0 ? "good" : "bad"}">${now > 0 ? "+" : "−"}${money(Math.abs(now), { round: true })}</span> this month</div>` : ""; })()}
         <div class="ft"><span>${tg ? (s >= tg ? "Reached!" : `${money(tg - s, { round: true })} to go${g.by ? " · by " + esc(monthName(g.by, { month: "short", year: "numeric" })) : ""}`) : "No target"}</span>
           <button class="btn sm pri" data-act="gmove" data-id="${esc(g.id)}" data-dir="1">+ Add money</button></div>
       </div>`; }).join("")}</div>` : `<div class="card welcome savempty"><div class="e">🐷</div><h2 style="margin:6px 0">Saving for something?</h2><p class="muted">A holiday, a new car, an emergency fund… Make a goal, then put money in whenever you can. It shows up in that month's budget too.</p><div class="addrow" style="justify-content:center"><button class="btn pri" data-act="goal">+ New savings goal</button><button class="btn" data-act="billplan">🧾 Plan for next year's bills</button></div></div>`}
@@ -1002,6 +1030,8 @@ function openGoalView(id) {
       <div class="gv">${money(s)}</div><div class="gs">${tg ? `${Math.round(Math.min(1, s / tg) * 100)}% of ${money(tg)}` : "no target set"}</div></div>
     ${plan ? `<p class="small" style="text-align:center">${plan}</p>` : ""}
     <div class="actions"><button class="btn pri" data-act="gmove" data-id="${esc(g.id)}" data-dir="1">+ Put money in</button><button class="btn" data-act="gmove" data-id="${esc(g.id)}" data-dir="-1">− Take out</button></div>
+    ${(() => { const gm = goalMonths(g, 6), mx = Math.max(...gm.map(x => Math.abs(x.v)), 1); if (!gm.some(x => x.v)) return "";
+      return `<h4>Last 6 months</h4><div class="gbars">${gm.map(x => `<div data-tip="${esc(monthName(x.m) + ": " + money(x.v, { raw: true }))}"><span class="gv2">${x.v ? money(x.v, { round: true, raw: true }) : ""}</span><i style="height:${Math.max(3, Math.abs(x.v) / mx * 70)}px;background:${x.v < 0 ? "var(--bad)" : g.color || "var(--save)"}"></i><b>${monthName(x.m, { month: "short" })}</b></div>`).join("")}</div>`; })()}
     ${(g.moves || []).length ? `<h4>History</h4><div>${[...g.moves].sort((a, b) => b.d.localeCompare(a.d)).slice(0, 12).map(d => `<div class="item" style="cursor:default"><div class="main"><div class="name">${num(d.a) >= 0 ? "Put in" : "Took out"}</div><div class="meta">${esc(new Date(d.d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }))}${d.by && B()?.kind === "shared" ? " · " + esc(whoName(d.by)) : ""}</div></div><div class="amt ${num(d.a) < 0 ? "bad" : ""}">${money(num(d.a))}</div></div>`).join("")}</div>` : ""}
     <div class="actions"><button class="btn" data-act="goal" data-id="${esc(g.id)}">Edit goal</button></div>`);
 }
@@ -1075,8 +1105,15 @@ const head = t => `<h3>${t}<button class="ib x" data-close title="Close">✕</bu
 let toastT;
 function toast(msg) { const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2800); }
 
+// categories, the ones used most recently first (up to 4), then the rest in their usual order
+function recentCats(kind) {
+  const all = cats().filter(c => c.kind === kind), seen = [];
+  for (const e of [...S.entries].sort((a, z) => (z.updatedAt || z.createdAt || 0) - (a.updatedAt || a.createdAt || 0)))
+    if ((e.type === "income") === (kind === "in") && e.category && !seen.includes(e.category) && all.some(c => c.id === e.category)) { seen.push(e.category); if (seen.length === 4) break; }
+  return [...seen.map(id => all.find(c => c.id === id)), ...all.filter(c => !seen.includes(c.id))];
+}
 function catChips(kind, sel) {
-  return cats().filter(c => c.kind === kind).map(c => `<button type="button" class="chip2 ${c.id === sel ? "on" : ""}" data-cat="${esc(c.id)}">${esc(c.emoji)} ${esc(c.name)}</button>`).join("");
+  return recentCats(kind).map(c => `<button type="button" class="chip2 ${c.id === sel ? "on" : ""}" data-cat="${esc(c.id)}">${esc(c.emoji)} ${esc(c.name)}</button>`).join("");
 }
 
 function openEntry(id, type) {

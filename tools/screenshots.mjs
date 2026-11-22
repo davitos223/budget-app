@@ -17,6 +17,7 @@ const SHOTS = {
   "phone-billplan": [PHONE, "", `openBillPlan(); document.activeElement.blur(); document.querySelector(".sheet").scrollTop = 0;`],
   "phone-billplan2": [PHONE, "", `openBillPlan(); document.activeElement.blur(); const sh = document.querySelector(".sheet"); sh.scrollTop = sh.scrollHeight;`],
   "phone-dark": [PHONE, "theme=dark"],
+  "phone-goalview": [PHONE, "view=goals", `openGoalView(S.goals.find(g => g.name === "Summer holiday").id); document.activeElement.blur(); const sh = document.querySelector(".sheet"); sh.scrollTop = 260;`],
   "desktop-light": [DESK, ""],
   "desktop-dark": [DESK, "theme=dark"],
   "desktop-year": [DESK, "view=year", `scrollTo(0, 640);`],

@@ -43,7 +43,7 @@ Enter your income and bills once, tick them off as you pay, and always know what
 - **Enter bills once.** Choose how often each one comes (every month, every 2, 3 or 6 months, every year, or just once), and optionally when it ends. It appears in every month on its own.
 - **Tick bills off.** Direct debits (*Autopay*) tick themselves on their due day.
 - **Upcoming payments** show "today", "in 2 days" or "3 days late", with overdue and due-soon warnings.
-- **Insights** in plain words from your own numbers, like "Groceries: €89 less than last month", "Everything going out is down 6%", "You're at 92% of your Eating out limit".
+- **Insights** in plain words from your own numbers, led by where the month is heading ("You're on track to finish November with €2.052 left"), then things like "Groceries: €89 less than last month", "Everything going out is down 6%", "You're at 92% of your Eating out limit".
 - **Month-end forecast:** what's likely left on the last day, based on your usual spending for the rest of the month.
 - **Calendar** (in Details): every bill, payday, purchase and savings move on its day. Overdue bills show in red; tap a day to see what's on it.
 - **Plan for next year's bills:** adds up every bill for next year (which months the irregular ones fall in, too) and tells you how much to put aside each month to have it all by a date you pick — or what they cost spread over the year. One tap turns it into a savings goal like "Bills 2027".
@@ -51,7 +51,7 @@ Enter your income and bills once, tick them off as you pay, and always know what
 - **Fill in earlier months:** started mid-year? One tap counts your current income (and bills) in the months before, so past months and the Year view are right. Past bills are ticked as paid.
 - **Just this month:** change a bill's amount or skip it for one month without touching the others.
 - **Spending limits** for each category, e.g. "€194 left of €600", with "You're doing great 👍", "Getting close" or "Over by …".
-- **Savings goals** with a target and a date. The app works out how much to put aside each month, and money you put in counts in that month's budget.
+- **Savings goals** with a target and a date, "+€150 this month" on each card and a last-6-months chart inside. The app works out how much to put aside each month, and money you put in counts in that month's budget.
 - **The year at a glance:** income per month, going out per month (bars), what's left over, the best month, categories and the biggest bills.
 - **Private budgets for everyone**, plus optional **shared** ones (e.g. "Household") that show who added what.
 - **Make it yours:** theme, 8 colours, 3 text sizes, the page it opens on, bill order, hide-amounts mode, currency and number style, editable categories, carry-over.
@@ -177,7 +177,7 @@ Data layout: `budgets/{id}` (name, kind, owner, members, currency, categories, l
 ## For developers
 
 - **Run locally:** `py -3.12 -m http.server 5174 --bind 127.0.0.1 --directory docs`, then open <http://localhost:5174>. This uses the real project, so add **`?demo`** (<http://localhost:5174/?demo>) for a demo mode that never touches it. Demo mode only works on localhost.
-- **Tests:** `node tools/test.mjs` runs 75 checks of the money maths on a demo copy (never the real database). Run it before every release.
+- **Tests:** `node tools/test.mjs` runs 79 checks of the money maths on a demo copy (never the real database). Run it before every release.
 - **How it's built:** see [ARCHITECTURE.md](ARCHITECTURE.md) for the data, the calculation rules and the access rules.
 - **Screenshots:** `node tools/screenshots.mjs` (Node 22+ and Edge or Chrome) rebuilds everything in `screenshots/` from a demo copy with invented data. Never use a real budget for screenshots.
 - **Releases:** bump the version in **three places together**: `APP_VERSION` in `docs/index.html`, the `?v=` on the `config.js` / `cloud.js` script tags, and `version:` in `docs/cloud.js`.

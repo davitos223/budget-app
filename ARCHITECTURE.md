@@ -49,7 +49,7 @@ budgets/{bid}/goals/{id}        name, emoji, target, by "YYYY-MM"|null, color, m
 | `safeToSpend(m)` | This month only: max(0, left) ÷ days left including today |
 | `limitsFor(m)` | Each limited category: limit, used (bills + spending, paid or not), done (the paid part) |
 | `forecast(m)` | This month only: left − likely further spending (usual monthly spending of the last 3 months minus what's spent so far; with no history, this month's daily pace × days left) |
-| `insights(m)` | Up to 4 observations: biggest category rise and fall vs last month (≥ €20 and ≥ 10%), total going out ±5% or more, saved ≥ €20 more, limits at 80%+ or over, the biggest cost |
+| `insights(m)` | Up to 5 observations, first the month-end forecast (this month), then: biggest category rise and fall vs last month (≥ €20 and ≥ 10%), total going out ±5% or more, saved ≥ €20 more, limits at 80%+ or over, the biggest cost |
 | `billsPlan(year)` | Every bill in a calendar year: count, months, total (one-month changes and skips included) |
 | `perMonth(total, from, by)` | Monthly amount from `from` to `by` (both included), rounded UP to the cent so it is enough |
 | `backfillStart(e, from)` | For *Fill in earlier months*: the first month on or after `from` that keeps the item's rhythm |
@@ -76,7 +76,7 @@ Checked from outside on 2026-11-22: reads without a login give `PERMISSION_DENIE
 
 ## Tests
 
-- `node tools/test.mjs`: **75 checks** of the money maths on a demo copy, against numbers worked out by hand. They cover parsing amounts, every repeat rule across year ends, one household's month in full, autopay timing, one-month changes and skips, safe-to-spend at month ends, February and leap years, year totals, carry-over, limits, *Fill in earlier months*, formatting, forecast, insights, the bills plan, and backup → restore giving identical totals. **Run it before every release.**
+- `node tools/test.mjs`: **79 checks** of the money maths on a demo copy, against numbers worked out by hand. They cover parsing amounts, every repeat rule across year ends, one household's month in full, autopay timing, one-month changes and skips, safe-to-spend at month ends, February and leap years, year totals, carry-over, limits, *Fill in earlier months*, formatting, forecast, insights, the bills plan, and backup → restore giving identical totals. **Run it before every release.**
 - `node tools/screenshots.mjs`: remakes the README pictures from invented demo data.
 - Still to do: automated tests of `firestore.rules` on the Firebase emulator (needs Java 21).
 
