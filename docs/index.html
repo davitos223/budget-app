@@ -11,7 +11,14 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<!-- the font loads without holding up the first paint -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<!-- start fetching Firebase right away, in parallel with the page -->
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js" crossorigin>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js" crossorigin>
+<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <script>
 // apply the saved look before anything paints (no flash of the wrong theme)
 try { const l = JSON.parse(localStorage.getItem("budget.look") || "{}");
@@ -57,8 +64,8 @@ body.hide .money{filter:blur(.42em);user-select:none}
 
 /* ---------- coloured header ---------- */
 .head{background:linear-gradient(150deg,var(--head1),var(--head2));color:#fff;padding-top:env(safe-area-inset-top)}
-.head.tall{padding-bottom:86px}
-.head.short{padding-bottom:58px}
+.head.tall{padding-bottom:16px}
+.head.short{padding-bottom:20px}
 .topin{display:flex;align-items:center;gap:8px;padding:14px 0 6px}
 .bsel{display:flex;align-items:center;gap:10px;border:none;background:none;color:#fff;padding:4px 8px 4px 4px;margin-left:-4px;border-radius:14px;min-width:0;text-align:left}
 .bsel:hover{background:#ffffff1f}
@@ -77,8 +84,8 @@ body.hide .money{filter:blur(.42em);user-select:none}
 .nav .gb{width:34px;height:34px;font-size:1.1em}
 .pill{border:none;background:#ffffff2b;color:#fff;border-radius:999px;padding:5px 12px;font-size:.82em;font-weight:700}
 .pill:hover{background:#ffffff45}
-main.wrap{margin-top:-70px;position:relative}
-.head.short + main.wrap{margin-top:-44px}
+main.wrap{margin-top:18px;position:relative}
+.head.short + main.wrap{margin-top:18px}
 
 /* ---------- cards ---------- */
 .grid{display:grid;gap:14px;grid-template-columns:minmax(0,1fr)}
@@ -362,8 +369,8 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
 .savempty>*{position:relative;z-index:1}
 .savempty .e{font-size:3.2em}
 </style>
-<script src="config.js?v=20261122i"></script>
-<script type="module" src="cloud.js?v=20261122i"></script>
+<script src="config.js?v=20261122j"></script>
+<script type="module" src="cloud.js?v=20261122j"></script>
 </head>
 <body>
 <div id="app"></div>
@@ -372,7 +379,7 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
 
 <script>
 "use strict";
-const APP_VERSION = "20261122i";
+const APP_VERSION = "20261122j";
 // demo mode: no Firebase config, or ?demo on a local test server (never touches the real account)
 const LOCAL = !window.BUDGET_FIREBASE || (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && /[?&]demo\b/.test(location.search));
 
@@ -654,14 +661,13 @@ function render() {
           <span style="min-width:0"><span class="t">${esc(b?.name || "Budget")} ▾</span><span class="s">${kindLine}</span></span></button>
         <span class="sp"></span>
         <button class="gb" data-act="hide" title="${S.hide ? "Show amounts" : "Hide amounts"}">${S.hide ? ICON.eyeoff : ICON.eye}</button>
-        <button class="gb" data-act="settings" title="Settings">${ICON.gear}</button>
       </div>
       ${S.view !== "goals" ? `<div class="nav">
         <button class="gb" data-act="prev" title="Previous">‹</button>
         <div class="lbl">${esc(navLbl)}</div>
         <button class="gb" data-act="next" title="Next">›</button>
       </div>
-      <div style="text-align:center;min-height:30px;padding-top:6px">${atNow ? "" : `<button class="pill" data-act="now">Back to today</button>`}</div>` : `<div class="nav"><div class="lbl">Savings goals</div></div>`}
+      ${atNow ? "" : `<div style="text-align:center;padding-top:10px"><button class="pill" data-act="now">Back to today</button></div>`}` : `<div class="nav"><div class="lbl">Savings goals</div></div>`}
     </div></header>
     <main class="wrap">${body}
       <p class="muted small foot">${b?.kind === "shared" ? `Shared with ${esc(sharedWith(b))}` : "🔒 Only you can see this budget"}</p>

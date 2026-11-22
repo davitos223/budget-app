@@ -12,9 +12,8 @@ const cfg = window.BUDGET_FIREBASE;
 
 if (cfg) {
   try {
-    const { initializeApp } = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`);
-    const A = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-auth.js`);
-    const F = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`);
+    // the three Firebase pieces download at the same time (not one after another)
+    const [{ initializeApp }, A, F] = await Promise.all(["app", "auth", "firestore"].map(n => import(`https://www.gstatic.com/firebasejs/${V}/firebase-${n}.js`)));
     const app = initializeApp(cfg);
     const auth = A.getAuth(app);
     let fs;
@@ -30,7 +29,7 @@ if (cfg) {
       [k, v === null ? F.deleteField() : (v && typeof v === "object" && !Array.isArray(v)) ? nulls(v) : v]));
 
     window.Cloud = {
-      version: "20261122i",   // must match APP_VERSION in index.html
+      version: "20261122j",   // must match APP_VERSION in index.html
       signIn: (email, pw) => A.signInWithEmailAndPassword(auth, email, pw),
       signOut: () => A.signOut(auth),
       resetPassword: email => A.sendPasswordResetEmail(auth, email),

@@ -1,9 +1,9 @@
 // Network first: online you always get the newest version from GitHub; if GitHub can't be reached,
-// answers with an error page, or takes more than a few seconds, the last saved copy opens instead
+// answers with an error page, or takes more than 1.5 seconds, the last saved copy opens instead
 // (and the newer version still downloads in the background for next time).
 // Only the app's own files, fonts and the Firebase library are handled; Firebase's data traffic passes straight through.
 const CACHE = "budget-v1";
-const WAIT_MS = 4000;
+const WAIT_MS = 1500;   // GitHub slower than this: open the saved copy now, the new one is used next time
 const handled = url => url.origin === location.origin || url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com" || url.href.startsWith("https://www.gstatic.com/firebasejs/");
 const good = res => res.ok || res.type === "opaque";   // cross-site font CSS comes back opaque
 
