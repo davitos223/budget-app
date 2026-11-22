@@ -9,9 +9,9 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="preload" href="config.js?v=20261122u" as="script">
-<link rel="preload" href="calculations.js?v=20261122u" as="script">
-<script type="module" src="cloud.js?v=20261122u"></script>
+<link rel="preload" href="config.js?v=20261122v" as="script">
+<link rel="preload" href="calculations.js?v=20261122v" as="script">
+<script type="module" src="cloud.js?v=20261122v"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- the font loads without holding up the first paint -->
@@ -540,6 +540,26 @@ button.home-metric:hover { border-color:var(--accent); }
 .category-total { margin:0 0 14px; }
 .toast-undo { border:0; background:none; color:inherit; min-height:44px; padding:0 8px; margin-left:10px; text-decoration:underline; font-weight:800; }
 .settings-title { margin:0; font-size:clamp(1.85em,3.2vw,2.85em); letter-spacing:-.045em; line-height:1.12; }
+.budget-shell .home-details-button { border-radius:999px; padding:0 15px; background:#217b6866; }
+.budget-shell .home-details-button:hover { background:#217b68a6; }
+.home-metric-link { position:relative; }
+.home-metric-link > .muted:first-child { padding-right:13px; }
+.home-metric-chevron { position:absolute; top:12px; right:12px; color:var(--accent); font-size:1.5em; font-weight:800; line-height:1; }
+.budget-shell .month-details .lk,
+.budget-shell .month-details .bill-filters .btn,
+.budget-shell .month-details .card > .btn {
+  border:1px solid var(--line); border-radius:999px; padding:5px 12px; min-height:34px;
+  background:var(--card2); color:var(--text); font-weight:750;
+}
+.budget-shell .month-details .lk:hover,
+.budget-shell .month-details .card > .btn:hover,
+.budget-shell .month-details .bill-filters .btn:is(:hover,[aria-pressed="true"]) {
+  border-color:var(--accent); background:var(--accent-soft);
+}
+.month-details > .lk { margin-bottom:8px; }
+.month-details .sec > span:last-child { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:4px; }
+.month-details .sec .lk { font-size:1.1em; }
+.month-details .sec .lk + .lk { margin-left:0; }
 .settings-intro { margin:5px 0 10px; font-size:1.08em; }
 .settings-page { max-width:none; display:grid; gap:clamp(12px,1.4vw,24px); }
 .settings-column { display:contents; }
@@ -651,11 +671,11 @@ button.home-metric:hover { border-color:var(--accent); }
 <div class="scrim" id="scrim" hidden></div>
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script src="config.js?v=20261122u"></script>
-<script src="calculations.js?v=20261122u"></script>
+<script src="config.js?v=20261122v"></script>
+<script src="calculations.js?v=20261122v"></script>
 <script>
 "use strict";
-const APP_VERSION = "20261122u";
+const APP_VERSION = "20261122v";
 // demo mode: no Firebase config, or ?demo on a local test server (never touches the real account)
 const LOCAL = !window.BUDGET_FIREBASE || (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && /[?&]demo\b/.test(location.search));
 
@@ -981,8 +1001,8 @@ function renderMonth() {
     <p class="muted">Add your income and your regular bills once. Bills that repeat show up every month on their own — you just tick them off when they're paid.</p>
     <div class="addrow" style="justify-content:center"><button class="btn pri" data-act="add" data-type="income">+ Add income</button><button class="btn pri" data-act="add" data-type="bill">+ Add a bill</button></div></div>`;
   return S.sub === "details"
-    ? `<button class="lk" data-act="sub" data-v="summary">‹ Back to Home</button>
-      <h1 class="details-heading" tabindex="-1">Month Details</h1>${renderDetails(m, t, items, l, b)}${renderMonthInsights(m, t, b)}`
+    ? `<div class="month-details"><button class="lk" data-act="sub" data-v="summary">‹ Back to Home</button>
+      <h1 class="details-heading" tabindex="-1">Month Details</h1>${renderDetails(m, t, items, l, b)}${renderMonthInsights(m, t, b)}</div>`
     : renderSummary(m, t, items);
 }
 
@@ -1015,12 +1035,13 @@ function renderSummary(m, t, items) {
       <h1 class="${t.afterBills < 0 ? "bad" : ""}">${money(t.afterBills)}</h1>
       <div class="hero-totals"><span>Income <b>${money(t.income)}</b></span><span>Bills <b>${money(t.bills)}</b></span>
         ${t.carry ? `<span>Carried over <b>${money(t.carry)}</b></span>` : ""}</div>
-      <button class="lk" data-act="sub" data-v="details">View month details <span aria-hidden="true">→</span></button>
+      <button class="lk home-details-button" data-act="sub" data-v="details">View month details <span aria-hidden="true">→</span></button>
     </section>
     <div class="home-metrics">
-      <button class="card home-metric" data-act="sub" data-v="details" data-to="billsCard" data-filter="unpaid">
+      <button class="card home-metric home-metric-link" data-act="sub" data-v="details" data-to="billsCard" data-filter="unpaid">
         <span class="muted">Still to pay</span><strong>${money(t.unpaid)}</strong>
         <span class="muted small">${t.unpaidCount ? `${t.unpaidCount} bill${t.unpaidCount === 1 ? "" : "s"} outstanding` : t.billCount ? "All bills paid" : "No bills this month"}</span>
+        <span class="home-metric-chevron" aria-hidden="true">›</span>
       </button>
       <section class="card home-metric">
         <span class="muted">${safe ? "Safe to spend" : "Left after everything"}</span>
