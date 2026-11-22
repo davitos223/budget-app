@@ -45,6 +45,17 @@ service cloud.firestore {
           && col in ['entries', 'months', 'goals']
           && me() in budget(b).members;
       }
+
+      // activity history: members can read it and add to it as themselves; nobody can change it.
+      // Only the owner can remove it (when deleting the whole budget).
+      match /activity/{id} {
+        allow read: if signedIn() && me() in budget(b).members;
+        allow create: if signedIn() && me() in budget(b).members
+          && request.resource.data.by == me()
+          && request.resource.data.at is int
+          && request.resource.data.k is string;
+        allow delete: if signedIn() && budget(b).owner == me();
+      }
     }
   }
 }

@@ -5,6 +5,7 @@
 //   budgets/{bid}/entries/{id}          income, bills and spending (one-off or repeating)
 //   budgets/{bid}/months/{YYYY-MM}      { paid:{id:bool}, amounts:{id:number}, skip:{id:true}, note }
 //   budgets/{bid}/goals/{id}            savings goals
+//   budgets/{bid}/activity/{id}         who changed what and when (add-only)
 // Only the members listed on a budget can read or write it; a personal budget can never get extra members.
 const V = "10.12.2";
 const emit = (name, detail) => window.dispatchEvent(new CustomEvent(name, { detail }));
@@ -29,7 +30,7 @@ if (cfg) {
       [k, v === null ? F.deleteField() : (v && typeof v === "object" && !Array.isArray(v)) ? nulls(v) : v]));
 
     window.Cloud = {
-      version: "20261122l",   // must match APP_VERSION in index.html
+      version: "20261122m",   // must match APP_VERSION in index.html
       signIn: (email, pw) => A.signInWithEmailAndPassword(auth, email, pw),
       signOut: () => A.signOut(auth),
       resetPassword: email => A.sendPasswordResetEmail(auth, email),
@@ -48,7 +49,7 @@ if (cfg) {
       updateBudget: (bid, patch) => F.setDoc(bdoc(bid), nulls(patch), { merge: true }),
       replaceBudgetField: (bid, field, value) => F.updateDoc(bdoc(bid), { [field]: value }),
       async deleteBudget(bid) {
-        for (const name of ["entries", "months", "goals"]) {
+        for (const name of ["entries", "months", "goals", "activity"]) {
           const s = await F.getDocs(sub(bid, name));
           for (let i = 0; i < s.docs.length; i += 400) {
             const b = F.writeBatch(fs);
@@ -74,6 +75,9 @@ if (cfg) {
         return { id: r.id, done: F.setDoc(r, data) };
       },
       deleteItem: (bid, col, id) => F.deleteDoc(F.doc(sub(bid, col), id)),
+      // activity history: append-only (the rules refuse edits), newest first
+      addActivity: (bid, d) => F.addDoc(sub(bid, "activity"), d),
+      watchActivity: (bid, cb, err) => F.onSnapshot(F.query(sub(bid, "activity"), F.orderBy("at", "desc"), F.limit(80)), s => cb(listOf(s)), err),
       setMonth: (bid, month, patch) => F.setDoc(F.doc(sub(bid, "months"), month), nulls(patch), { merge: true }),
     };
 

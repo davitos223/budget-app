@@ -377,9 +377,11 @@ body{padding-bottom:calc(120px + env(safe-area-inset-bottom))}
 .gbars i{display:block;width:70%;border-radius:6px}
 .gbars b{font-size:.74em;color:var(--muted)}
 .gbars .gv2{font-size:.7em;font-weight:800;color:var(--muted);white-space:nowrap}
+.row2 .mn .atx{font-size:.95em;color:var(--text);font-weight:600;line-height:1.4}
+.row2 .mn .atx b{display:inline;font-weight:800}
 </style>
-<script src="config.js?v=20261122l"></script>
-<script type="module" src="cloud.js?v=20261122l"></script>
+<script src="config.js?v=20261122m"></script>
+<script type="module" src="cloud.js?v=20261122m"></script>
 </head>
 <body>
 <div id="app"></div>
@@ -388,7 +390,7 @@ body{padding-bottom:calc(120px + env(safe-area-inset-bottom))}
 
 <script>
 "use strict";
-const APP_VERSION = "20261122l";
+const APP_VERSION = "20261122m";
 // demo mode: no Firebase config, or ?demo on a local test server (never touches the real account)
 const LOCAL = !window.BUDGET_FIREBASE || (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && /[?&]demo\b/.test(location.search));
 
@@ -474,13 +476,15 @@ function makeLocalStore() {
     saveItem: (b, c, id, d) => { id = id || rid(); ((db.items[b] ||= {})[c] ||= {})[id] = clone(d); persist(); return { id, done: ok }; },
     deleteItem: (b, c, id) => { if (db.items[b]?.[c]) delete db.items[b][c][id]; persist(); return ok; },
     setMonth: (b, m, p) => { merge((db.months[b] ||= {})[m] ||= {}, p); persist(); return ok; },
+    addActivity: (b, d) => { ((db.items[b] ||= {}).activity ||= {})[rid()] = clone(d); persist(); return ok; },
+    watchActivity: (b, cb) => on(() => cb(listOf(db.items[b]?.activity).sort((x, z) => z.at - x.at).slice(0, 80))),
   };
 }
 
 /* ---------- state ---------- */
 let Store = null;
 const S = { user: null, profile: {}, budgets: [], bid: null, entries: [], months: {}, goals: [], month: thisMonth(), year: today().getFullYear(),
-  view: "month", sub: "summary", hide: false, ready: false, loaded: false, dataStamp: 0 };
+  view: "month", sub: "summary", hide: false, activity: [], ready: false, loaded: false, dataStamp: 0 };
 let unsub = [], unsubBudget = null, creatingPersonal = false;
 const B = () => S.budgets.find(b => b.id === S.bid);
 const look = () => ({ theme: "auto", accent: "indigo", size: "normal", start: "month", hideOnStart: false, billSort: "due", ...(S.profile.look || {}) });
@@ -639,6 +643,53 @@ function billsPlan(year) {
 }
 // how much to put aside each month from `from` to `by` (both included) to reach `total` — rounded UP to the cent so it's enough
 function perMonth(total, from, by) { const n = mi(by) - mi(from) + 1; return n > 0 ? Math.ceil(Math.round(total * 100) / n) / 100 : null; }
+// ---------- activity history ----------
+// record one change: k = kind, n = name, a = amount, t = entry type, m = month, x = extra words
+function logAct(k, o = {}) {
+  if (!S.bid || !Store?.addActivity || !S.user) return;
+  const rec = { at: Date.now(), by: S.user.uid, k };
+  for (const [key, v] of Object.entries(o)) if (v != null && v !== "") rec[key] = v;
+  try { Store.addActivity(S.bid, rec)?.catch?.(e => console.warn("activity:", e && e.code)); } catch (e) { console.warn("activity:", e); }
+}
+function actText(r) {
+  const who = r.by === S.user?.uid ? "You" : esc(nameOf(r.by)), n = `<b>${esc(r.n || "")}</b>`;
+  const a = r.a != null ? " " + money(num(r.a)) : "", mon = r.m ? esc(monthName(r.m, { month: "long", year: "numeric" })) : "";
+  const tw = { income: "income", bill: "the bill", spend: "spending" }[r.t] || "";
+  switch (r.k) {
+    case "add": return `${who} added ${tw} ${n}${a}`;
+    case "edit": return `${who} changed ${n}${a ? ` (now${a})` : ""}`;
+    case "delete": return `${who} deleted ${n}`;
+    case "pay": return `${who} ticked ${n}${a} as paid${mon ? ` for ${mon}` : ""}`;
+    case "unpay": return `${who} unticked ${n}${mon ? ` for ${mon}` : ""}`;
+    case "month": return `${who} changed ${n} for ${mon}${r.x ? ` (${esc(r.x)})` : ""}`;
+    case "stop": return `${who} stopped ${n} from ${mon} on`;
+    case "goalIn": return `${who} put${a} into ${n}`;
+    case "goalOut": return `${who} took${a} out of ${n}`;
+    case "goalNew": return `${who} made the savings goal ${n}`;
+    case "goalEdit": return `${who} changed the savings goal ${n}`;
+    case "goalDel": return `${who} deleted the savings goal ${n}`;
+    case "goalMoveDel": return `${who} removed${a} from the history of ${n}`;
+    case "plan": return `${who} planned next year's bills: ${n}${a}`;
+    case "limits": return `${who} updated the spending limits`;
+    case "cats": return `${who} updated the categories`;
+    case "settings": return `${who} changed the budget settings`;
+    case "member": return `${who} added ${n} to the budget`;
+    case "kick": return `${who} removed ${n} from the budget`;
+    case "leave": return `${who} left the budget`;
+    case "backfill": return `${who} filled in ${esc(r.x || "items")} from ${mon}`;
+    case "restore": return `${who} restored a backup`;
+    default: return `${who} made a change`;
+  }
+}
+function timeAgo(at) {
+  const d = Date.now() - at, min = Math.round(d / 60000);
+  if (min < 1) return "just now"; if (min < 60) return `${min} min ago`;
+  const h = Math.round(min / 60); if (h < 24 && new Date(at).getDate() === new Date().getDate()) return `${h} h ago`;
+  const y = new Date(); y.setDate(y.getDate() - 1);
+  if (new Date(at).toDateString() === y.toDateString()) return "yesterday";
+  return new Date(at).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+}
+const actRow = (r, when) => `<div class="row2" style="cursor:default">${avatar(r.by)}<span class="mn"><span class="atx">${actText(r)}</span></span><span class="rt"><span class="muted small">${when}</span></span></div>`;
 // percent change, null if no base
 const change = (now, before) => before > 0 ? Math.round((now - before) / before * 100) : null;
 function chip(pct, lowerIsGood) {
@@ -867,7 +918,8 @@ function renderSummary(m, t, items, l, b) {
   const catEmpty = catCard || `<div class="card"><div class="ttl"><b>Categories</b></div><p class="muted small" style="margin:4px 0 10px">No spending recorded in ${esc(monthName(m, { month: "long" }))} yet. What you add shows up here by category, with its limit.</p><button class="btn sm" data-act="add" data-type="spend">+ Add spending</button></div>`;
   return `<div class="grid two">
     <div class="grid">${gaugeCard}${banners.join("")}${kpis}${moneyCard}${fcCard}</div>
-    <div class="grid">${insCard}${upEmpty}${catEmpty}${goalCard}</div>
+    <div class="grid">${insCard}${upEmpty}${catEmpty}${goalCard}${b?.kind === "shared" ? `<div class="card"><div class="ttl"><b>👥 Recent activity</b>${(S.activity || []).length ? `<button class="lk" data-act="activity">See all</button>` : ""}</div>
+      ${(S.activity || []).length ? S.activity.slice(0, 5).map(r => actRow(r, timeAgo(r.at))).join("") : `<p class="muted small" style="margin:4px 0">When anyone in this budget adds, changes or pays something, it shows up here.</p>`}</div>` : ""}</div>
   </div>`;
 }
 
@@ -1074,10 +1126,24 @@ function openBillPlan() {
       const plan = billsPlan(year), total = sum(plan.items.filter(x => (!only || x.repeat !== "monthly") && picked.has(x.id)), x => x.total), by = readMonthSel(sh, "bpB");
       const name = `Bills ${year}`, old = S.goals.find(g => g.name === name);
       w(Store.saveItem(S.bid, "goals", old?.id || null, { ...(old ? strip(old) : { moves: [], createdAt: Date.now(), color: "#f97316" }), name, emoji: "🧾", target: total, by }).done);
+      logAct("plan", { n: name, a: total });
       closeSheet(); toast(old ? `“${name}” updated` : `Savings goal “${name}” made — put money in each month`);
       S.view = "goals"; _render(); window.scrollTo(0, 0);
     };
   });
+}
+
+function openActivity() {
+  const list = S.activity || [];
+  const day = at => { const d = new Date(at), t = new Date(), y = new Date(); y.setDate(t.getDate() - 1);
+    return d.toDateString() === t.toDateString() ? "Today" : d.toDateString() === y.toDateString() ? "Yesterday" : d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }); };
+  let last = "", html = "";
+  for (const r of list) { const g = day(r.at); if (g !== last) { html += `<h4>${esc(g)}</h4>`; last = g; }
+    html += actRow(r, new Date(r.at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })); }
+  openSheet(`${head("Activity")}
+    <p class="muted small" style="margin-top:-6px">Every change in “${esc(B()?.name || "")}”: who did it and when. Nobody can edit or delete this history.</p>
+    ${list.length ? html : `<p class="muted">Nothing yet. Changes made from now on show up here.</p>`}
+    ${list.length >= 80 ? `<p class="muted small">Showing the latest 80 changes.</p>` : ""}`);
 }
 
 function openAllCats() {
@@ -1178,9 +1244,15 @@ function openEntry(id, type) {
         repeat, start, until, due, auto: f.type === "bill" && sh.querySelector("#fAuto").checked, note: sh.querySelector("#fNote").value.trim(),
         by: e?.by || S.user.uid, createdAt: e?.createdAt || Date.now(), updatedAt: Date.now() };
       w(Store.saveItem(S.bid, "entries", e?.id || null, data).done);
+      if (!e) logAct("add", { n: data.name, a: amount, t: data.type });
+      else if (["type", "name", "amount", "category", "repeat", "start", "until", "due", "auto", "note"].some(k => (e[k] ?? null) !== (data[k] ?? null) && !(k === "amount" && num(e.amount) === amount)))
+        logAct("edit", { n: data.name, a: num(e.amount) !== amount ? amount : null, t: data.type });
       if (repeating) {
-        const ov = sh.querySelector("#fOver").value.trim();
-        w(Store.setMonth(S.bid, m, { amounts: { [e.id]: ov === "" ? null : num(ov) }, skip: { [e.id]: sh.querySelector("#fSkip").checked ? true : null } }));
+        const ov = sh.querySelector("#fOver").value.trim(), skip = sh.querySelector("#fSkip").checked;
+        w(Store.setMonth(S.bid, m, { amounts: { [e.id]: ov === "" ? null : num(ov) }, skip: { [e.id]: skip ? true : null } }));
+        const oldOv = md.amounts?.[e.id] ?? null, newOv = ov === "" ? null : num(ov);
+        if ((oldOv == null ? null : num(oldOv)) !== newOv) logAct("month", { n: data.name, m, x: newOv == null ? "back to the usual amount" : `${money(newOv, { raw: true })} instead of ${money(amount, { raw: true })}` });
+        if (!!md.skip?.[e.id] !== skip) logAct("month", { n: data.name, m, x: skip ? "skipped" : "not skipped any more" });
       }
       closeSheet();
       if (!e && !occurs(data, S.month)) toast("Added to " + monthName(start));
@@ -1188,10 +1260,10 @@ function openEntry(id, type) {
     };
     const st = sh.querySelector("#stop");
     if (st) st.onclick = () => { if (!confirm(`Stop "${e.name}" from ${monthName(m)} on? Earlier months stay as they are.`)) return;
-      w(Store.saveItem(S.bid, "entries", e.id, { ...strip(e), until: mk(mi(m) - 1), updatedAt: Date.now() }).done); closeSheet(); toast("Stopped"); };
+      w(Store.saveItem(S.bid, "entries", e.id, { ...strip(e), until: mk(mi(m) - 1), updatedAt: Date.now() }).done); logAct("stop", { n: e.name, m }); closeSheet(); toast("Stopped"); };
     const dl = sh.querySelector("#del");
     if (dl) dl.onclick = () => { if (!confirm(repeating ? `Delete "${e.name}" from every month, including past ones?\n\nTip: use "Stop from … on" to keep the history.` : `Delete "${e.name}"?`)) return;
-      w(Store.deleteItem(S.bid, "entries", e.id)); closeSheet(); toast("Deleted"); };
+      w(Store.deleteItem(S.bid, "entries", e.id)); logAct("delete", { n: e.name, t: e.type }); closeSheet(); toast("Deleted"); };
   });
 }
 const strip = o => { const { id, ...r } = o; return r; };
@@ -1217,7 +1289,7 @@ function openLimits() {
     sh.querySelector("#lS").onclick = () => {
       const next = {};
       sh.querySelectorAll("[data-lim]").forEach(i => { const v = num(i.value); if (v > 0) next[i.dataset.lim] = v; });
-      w(Store.replaceBudgetField(b.id, "limits", next)); closeSheet(); toast("Limits saved");
+      w(Store.replaceBudgetField(b.id, "limits", next)); logAct("limits"); closeSheet(); toast("Limits saved");
     };
   });
 }
@@ -1285,6 +1357,7 @@ function openBackfill(type = "income", from) {
           for (let i = mi(ns); i < mi(oldStart) && mk(i) < cur; i += step) w(Store.setMonth(S.bid, mk(i), { paid: { [e.id]: true } }));
         }
       }
+      logAct("backfill", { m: readMonthSel(sh, "bkF"), x: `${picked.length} ${kind === "income" ? "income" : "bill"}${picked.length > 1 && kind !== "income" ? "s" : ""}` });
       closeSheet(); toast(`${picked.length} filled in from ${monthName(readMonthSel(sh, "bkF"), { month: "short", year: "numeric" })}`);
     };
   });
@@ -1311,12 +1384,14 @@ function openGoal(id) {
       const name = sh.querySelector("#gN").value.trim(); if (!name) { toast("Give the goal a name"); return; }
       w(Store.saveItem(S.bid, "goals", g?.id || null, { name, emoji: sh.querySelector("#gE").value.trim() || "🐷", target: num(sh.querySelector("#gT").value) || null,
         by: readMonthSel(sh, "gB"), color, moves: g?.moves || [], createdAt: g?.createdAt || Date.now() }).done);
+      logAct(g ? "goalEdit" : "goalNew", { n: name });
       closeSheet(); toast("Saved");
     };
     sh.querySelectorAll("[data-rm]").forEach(b => b.onclick = () => { if (!confirm("Remove this entry?")) return;
-      w(Store.saveItem(S.bid, "goals", g.id, { ...strip(g), moves: g.moves.filter(d => d.k !== b.dataset.rm) }).done); closeSheet(); toast("Removed"); });
+      const mv = g.moves.find(d => d.k === b.dataset.rm);
+      w(Store.saveItem(S.bid, "goals", g.id, { ...strip(g), moves: g.moves.filter(d => d.k !== b.dataset.rm) }).done); logAct("goalMoveDel", { n: g.name, a: mv ? num(mv.a) : null }); closeSheet(); toast("Removed"); });
     const d = sh.querySelector("#gD");
-    if (d) d.onclick = () => { if (!confirm(`Delete the goal "${g.name}" and its history?`)) return; w(Store.deleteItem(S.bid, "goals", g.id)); closeSheet(); toast("Deleted"); };
+    if (d) d.onclick = () => { if (!confirm(`Delete the goal "${g.name}" and its history?`)) return; w(Store.deleteItem(S.bid, "goals", g.id)); logAct("goalDel", { n: g.name }); closeSheet(); toast("Deleted"); };
   });
 }
 function openMove(id, dir) {
@@ -1330,6 +1405,7 @@ function openMove(id, dir) {
       const a = num(sh.querySelector("#mA").value); if (!a) { toast("Enter an amount"); return; }
       const d = sh.querySelector("#mD").value || isoDay(today());
       w(Store.saveItem(S.bid, "goals", g.id, { ...strip(g), moves: [...(g.moves || []), { k: rid(), d, a: dir * Math.abs(a), by: S.user.uid }] }).done);
+      logAct(dir > 0 ? "goalIn" : "goalOut", { n: g.name, a: Math.abs(a) });
       closeSheet(); toast(dir > 0 ? "Saved 🎉" : "Taken out");
     };
   });
@@ -1377,7 +1453,7 @@ function openSettings() {
       <label class="f"><span>Number style</span><select id="bNum">${opt(Object.fromEntries(Object.entries(NUMSTYLES).map(([k, v]) => [k, v[1]])), b.numStyle || "dot")}</select></label>
     </div>
     <label class="check"><input type="checkbox" id="bCarry" ${b.carry ? "checked" : ""}> Carry what's left over into the next month</label>
-    <div class="actions" style="margin-top:0"><button class="btn" id="bSave">Save budget settings</button><button class="btn" id="bCats">Edit categories</button><button class="btn" id="bLims">Spending limits</button></div>
+    <div class="actions" style="margin-top:0"><button class="btn" id="bSave">Save budget settings</button><button class="btn" id="bCats">Edit categories</button><button class="btn" id="bLims">Spending limits</button><button class="btn" id="bAct">Activity history</button></div>
 
     ${b.kind === "shared" ? `<h4>People</h4>
       <div>${(b.members || []).map(u => `<div class="item" style="cursor:default">${avatar(u)}<div class="main"><div class="name">${esc(b.memberNames?.[u] || "someone")}${u === S.user.uid ? " (you)" : ""}${u === b.owner ? '<span class="tag acc">owner</span>' : ""}</div></div>${owner && u !== S.user.uid ? `<button class="btn sm dang" data-kick="${esc(u)}">Remove</button>` : ""}</div>`).join("")}</div>
@@ -1405,18 +1481,20 @@ function openSettings() {
     sh.querySelector("#sHide").onchange = ev => saveLook({ hideOnStart: ev.target.checked });
     if (b) {
       sh.querySelector("#bSave").onclick = () => { w(Store.updateBudget(b.id, { name: sh.querySelector("#bN").value.trim() || b.name, emoji: sh.querySelector("#bE").value.trim() || "💰",
-        currency: sh.querySelector("#bCur").value, numStyle: sh.querySelector("#bNum").value, carry: sh.querySelector("#bCarry").checked })); toast("Budget saved"); };
+        currency: sh.querySelector("#bCur").value, numStyle: sh.querySelector("#bNum").value, carry: sh.querySelector("#bCarry").checked })); logAct("settings"); toast("Budget saved"); };
       sh.querySelector("#bCats").onclick = openCats;
       sh.querySelector("#bLims").onclick = openLimits;
+      sh.querySelector("#bAct").onclick = openActivity;
       sh.querySelectorAll("[data-kick]").forEach(x => x.onclick = () => { const u = x.dataset.kick; if (!confirm(`Remove ${b.memberNames?.[u] || "this person"} from "${b.name}"? They won't see it any more.`)) return;
         const names = { ...(b.memberNames || {}) }; delete names[u];
-        w(Store.replaceBudgetField(b.id, "members", b.members.filter(m => m !== u)).then(() => Store.replaceBudgetField(b.id, "memberNames", names))); closeSheet(); toast("Removed"); });
+        logAct("kick", { n: b.memberNames?.[u] || "someone" }); w(Store.replaceBudgetField(b.id, "members", b.members.filter(m => m !== u)).then(() => Store.replaceBudgetField(b.id, "memberNames", names))); closeSheet(); toast("Removed"); });
       const add = sh.querySelector("#pAdd");
       if (add) add.onclick = () => {
         const code = sh.querySelector("#pC").value.trim(), name = sh.querySelector("#pN").value.trim();
         if (!/^[A-Za-z0-9]{20,40}$/.test(code)) { toast("That doesn't look like a sharing code"); return; }
         if (b.members.includes(code)) { toast("Already in this budget"); return; }
         w(Store.replaceBudgetField(b.id, "members", [...b.members, code]).then(() => Store.updateBudget(b.id, { memberNames: { [code]: name || "someone" } })));
+        logAct("member", { n: name || "someone" });
         closeSheet(); toast((name || "They") + " can now open this budget");
       };
       const del = sh.querySelector("#bDel");
@@ -1427,7 +1505,7 @@ function openSettings() {
       };
       const lv = sh.querySelector("#bLeave");
       if (lv) lv.onclick = () => { if (!confirm(`Leave "${b.name}"? You'll need to be added again to see it.`)) return;
-        const p = S.budgets.find(x => x.kind === "personal" && x.owner === S.user.uid); w(Store.leaveBudget(b.id)); closeSheet(); if (p) selectBudget(p.id); toast("You left the budget"); };
+        const p = S.budgets.find(x => x.kind === "personal" && x.owner === S.user.uid); logAct("leave"); w(Store.leaveBudget(b.id)); closeSheet(); if (p) selectBudget(p.id); toast("You left the budget"); };
     }
     sh.querySelector("#aSave").onclick = () => {
       const n = sh.querySelector("#aN").value.trim(); if (!n) return;
@@ -1461,7 +1539,7 @@ function openCats() {
       if (a) { list.push({ id: "c" + rid(), kind: a.dataset.addk, emoji: "🏷️", name: "", color: PALETTE[list.length % PALETTE.length] }); draw(sh); sh.querySelector(`#cl [data-i="${list.length - 1}"][data-k=name]`).focus(); }
     });
     sh.querySelector("#cS").onclick = () => { list = list.filter(c => c.name.trim()).map(c => ({ ...c, name: c.name.trim(), emoji: c.emoji.trim() || "🏷️" }));
-      w(Store.replaceBudgetField(b.id, "categories", list)); closeSheet(); toast("Categories saved"); };
+      w(Store.replaceBudgetField(b.id, "categories", list)); logAct("cats"); closeSheet(); toast("Categories saved"); };
     sh.querySelector("#cR").onclick = () => { if (confirm("Put back the original categories?")) { list = JSON.parse(JSON.stringify(DEFAULT_CATS)); draw(sh); } };
   });
 }
@@ -1507,7 +1585,7 @@ async function importJSON(ev) {
   let d; try { d = JSON.parse(await file.text()); } catch { toast("That file isn't a budget backup"); return; }
   if (!isBackup(d)) { toast("That file isn't a budget backup"); return; }
   if (!confirm(`Restore ${d.entries.length} items and ${(d.goals || []).length} goals from "${d.budget?.name || "backup"}" into "${B().name}"?\n\nItems with the same id are replaced; nothing else is deleted.`)) return;
-  restoreData(d);
+  restoreData(d); logAct("restore");
   closeSheet(); toast("Backup restored");
 }
 
@@ -1536,7 +1614,10 @@ function selectBudget(id) {
     return u;
   };
   let cur = watch();
-  unsubBudget = () => { stopped = true; cur && cur(); };
+  // activity history (failing quietly if the rules don't allow it yet)
+  S.activity = [];
+  const actU = Store.watchActivity ? Store.watchActivity(id, l => { S.activity = l; render(); }, e => console.warn("activity:", e && e.code)) : null;
+  unsubBudget = () => { stopped = true; cur && cur(); actU && actU(); };
   render();
 }
 function err(e) { console.error(e); if (e && e.code === "permission-denied") toast("No access to this budget"); else toast("Sync problem: " + (e.code || e.message || e)); }
@@ -1613,6 +1694,7 @@ document.addEventListener("click", ev => {
     ev.stopPropagation();
     const it = monthItems(S.month).find(i => i.id === t.dataset.id); if (!it) return;
     w(Store.setMonth(S.bid, S.month, { paid: { [it.id]: !it.paid } }));
+    logAct(it.paid ? "unpay" : "pay", { n: it.name, a: it.paid ? null : it.amt, m: S.month });
     if (!it.paid) toast(`${it.name} paid ✓`);
     return;
   }
@@ -1636,6 +1718,7 @@ document.addEventListener("click", ev => {
     calday: () => { S.calDay = +t.dataset.d; _render(); },
     sub: () => { S.sub = t.dataset.v; closeSheet(); _render(); },
     allcats: openAllCats,
+    activity: openActivity,
     billplan: openBillPlan,
     gmove: () => openMove(t.dataset.id, +t.dataset.dir),
     sort: () => { const order = ["due", "unpaid", "amount", "name"]; const n = order[(order.indexOf(look().billSort) + 1) % order.length];

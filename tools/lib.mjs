@@ -66,7 +66,11 @@ export function demoData() {
     currency: "EUR", numStyle: "dot", carry: false, categories: cats, limits: { c9: 600, c10: 140, c8: 160, c14: 80 }, createdAt: 1 };
   return { profile: { name: "Alex", look: { theme: "light", accent: "indigo", size: "normal", start: "month" } },
     budgets: { demo: budget, mine: { name: "My budget", emoji: "💰", kind: "personal", owner: A, members: [A], memberNames: { [A]: "Alex" }, currency: "EUR", numStyle: "dot", categories: cats, createdAt: 0 } },
-    items: { demo: { entries, goals } }, months: { demo: months } };
+    items: { demo: { entries, goals, activity: (() => { const H = 3600e3, t = Date.now(), m = mk(nowI); const L = [
+      [0.3, Bu, "add", { n: "Weekly shop", a: 128.4, t: "spend" }], [2, A, "pay", { n: "Internet & TV", a: 44.9, m }], [5, Bu, "goalIn", { n: "Summer holiday", a: 150 }],
+      [26, A, "add", { n: "Cinema", a: 24, t: "spend" }], [30, Bu, "month", { n: "Electricity", m, x: "112,00 € instead of 96,00 €" }], [52, A, "limits", {}],
+      [75, Bu, "pay", { n: "Rent", a: 920, m }], [99, A, "add", { n: "Fuel", a: 61, t: "spend" }]];
+      return Object.fromEntries(L.map(([h, by, k, o], i) => ["a" + i, { at: Math.round(t - h * H), by, k, ...o }])); })() } }, months: { demo: months } };
 }
 
 /* ---------- demo copy of the app ---------- */

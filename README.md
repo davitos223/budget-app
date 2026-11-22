@@ -47,6 +47,7 @@ Enter your income and bills once, tick them off as you pay, and always know what
 - **Month-end forecast:** what's likely left on the last day, based on your usual spending for the rest of the month.
 - **Calendar** (in Details): every bill, payday, purchase and savings move on its day. Overdue bills show in red; tap a day to see what's on it.
 - **Plan for next year's bills:** adds up every bill for next year (which months the irregular ones fall in, too) and tells you how much to put aside each month to have it all by a date you pick — or what they cost spread over the year. One tap turns it into a savings goal like "Bills 2027".
+- **Activity history:** every change is recorded with who did it and when ("Sam added spending Weekly shop €128,40", "Mum ticked Rent as paid"). Shared budgets show the latest on the Summary; Settings → *Activity history* has everything. Nobody can edit or delete it.
 - **Optional dates:** give anything a day as well as a month (a due day, a pay day or the date of a purchase), or just pick the month. Day, month and year are dropdowns, so there's nothing to type.
 - **Fill in earlier months:** started mid-year? One tap counts your current income (and bills) in the months before, so past months and the Year view are right. Past bills are ticked as paid.
 - **Just this month:** change a bill's amount or skip it for one month without touching the others.
@@ -177,7 +178,7 @@ Data layout: `budgets/{id}` (name, kind, owner, members, currency, categories, l
 ## For developers
 
 - **Run locally:** `py -3.12 -m http.server 5174 --bind 127.0.0.1 --directory docs`, then open <http://localhost:5174>. This uses the real project, so add **`?demo`** (<http://localhost:5174/?demo>) for a demo mode that never touches it. Demo mode only works on localhost.
-- **Tests:** `node tools/test.mjs` runs 79 checks of the money maths on a demo copy (never the real database). Run it before every release.
+- **Tests:** `node tools/test.mjs` runs 84 checks of the money maths on a demo copy (never the real database). Run it before every release.
 - **How it's built:** see [ARCHITECTURE.md](ARCHITECTURE.md) for the data, the calculation rules and the access rules.
 - **Screenshots:** `node tools/screenshots.mjs` (Node 22+ and Edge or Chrome) rebuilds everything in `screenshots/` from a demo copy with invented data. Never use a real budget for screenshots.
 - **Releases:** bump the version in **three places together**: `APP_VERSION` in `docs/index.html`, the `?v=` on the `config.js` / `cloud.js` script tags, and `version:` in `docs/cloud.js`.

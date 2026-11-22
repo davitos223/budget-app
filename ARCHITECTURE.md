@@ -27,6 +27,7 @@ budgets/{bid}                   name, emoji, kind "personal"|"shared", owner, me
 budgets/{bid}/entries/{id}      type "income"|"bill"|"spend", name, amount, category, repeat, start "YYYY-MM",
                                 until "YYYY-MM"|null, due 1–31|null, auto, note, by uid, createdAt, updatedAt
 budgets/{bid}/months/{YYYY-MM}  paid {entryId: bool}, amounts {entryId: number}, skip {entryId: true}, note
+budgets/{bid}/activity/{id}     at (ms), by uid, k (kind), n (name), a (amount), t (type), m (month), x (extra words) — add-only
 budgets/{bid}/goals/{id}        name, emoji, target, by "YYYY-MM"|null, color, moves [{ k, d "YYYY-MM-DD", a ±amount, by uid }], createdAt
 ```
 
@@ -69,6 +70,7 @@ Rules that are easy to get wrong:
 - Creating a budget: you must be the owner and the only member, and the kind must be personal or shared.
 - **Personal budgets can never get other members.**
 - The owner can change anything, but can't hand away ownership, remove themselves or change the kind. Members can edit names, currency, categories and limits, but never owner, members or kind. A member may remove only themselves.
+- **Activity** (`budgets/{bid}/activity`): members may read it and add records as themselves (`by` must be their uid, `at` an integer, `k` a string). Nobody can change or delete a record, except the owner when deleting the whole budget.
 - Only the owner can delete a budget. The app deletes the inner documents first, because Firestore doesn't do that by itself.
 - The browser API key only works from `davitos223.github.io`, `localhost:5174` and `budget-600b6.firebaseapp.com`.
 
@@ -76,7 +78,7 @@ Checked from outside on 2026-11-22: reads without a login give `PERMISSION_DENIE
 
 ## Tests
 
-- `node tools/test.mjs`: **79 checks** of the money maths on a demo copy, against numbers worked out by hand. They cover parsing amounts, every repeat rule across year ends, one household's month in full, autopay timing, one-month changes and skips, safe-to-spend at month ends, February and leap years, year totals, carry-over, limits, *Fill in earlier months*, formatting, forecast, insights, the bills plan, and backup → restore giving identical totals. **Run it before every release.**
+- `node tools/test.mjs`: **84 checks** of the money maths on a demo copy, against numbers worked out by hand. They cover parsing amounts, every repeat rule across year ends, one household's month in full, autopay timing, one-month changes and skips, safe-to-spend at month ends, February and leap years, year totals, carry-over, limits, *Fill in earlier months*, formatting, forecast, insights, the bills plan, activity text and recording, and backup → restore giving identical totals. **Run it before every release.**
 - `node tools/screenshots.mjs`: remakes the README pictures from invented demo data.
 - Still to do: automated tests of `firestore.rules` on the Firebase emulator (needs Java 21).
 

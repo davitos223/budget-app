@@ -154,6 +154,13 @@ const plain = s => s.replace(/\s/g, " ");
 check("euro format 1.234,50 €", plain(money(1234.5, { raw: true })), "1.234,50 €");
 check("rounded format", plain(money(1234.5, { raw: true, round: true })), "1.235 €");
 
+/* ---------- activity history ---------- */
+const who = { by: "local" };
+check("activity text: added spending", actText({ ...who, k: "add", n: "Shop", a: 45.2, t: "spend" }).replace(/<[^>]+>/g, "").replace(/\s/g, " "), "You added spending Shop 45,20 €");
+check("activity text: ticked as paid", actText({ ...who, k: "pay", n: "Rent", a: 650, m: "2026-11" }).replace(/<[^>]+>/g, "").replace(/\s/g, " "), "You ticked Rent 650,00 € as paid for November 2026");
+check("activity text: someone else, savings", (S.budgets[0].memberNames = { u2: "Sam" }, actText({ by: "u2", k: "goalIn", n: "Holiday", a: 100 }).replace(/<[^>]+>/g, "").replace(/\s/g, " ")), "Sam put 100,00 € into Holiday");
+check("activity text: one-month change", actText({ ...who, k: "month", n: "Rent", m: "2026-10", x: "700,00 € instead of 650,00 €" }).replace(/<[^>]+>/g, "").replace(/\s/g, " "), "You changed Rent for October 2026 (700,00 € instead of 650,00 €)");
+
 /* ---------- backup → restore gives the same numbers ---------- */
 const months = Array.from({ length: 20 }, (_, i) => mk(mi("2025-05") + i));
 const before = months.map(m => totals(m));
@@ -167,6 +174,11 @@ await restoreData(bk); await wait(300);
 check("restore brings every item back", S.entries.length, FIX.entries.length);
 check("restore keeps paid ticks", S.months["2026-11"]?.paid?.rent, true);
 check("restored budget gives identical totals for 20 months", months.map(m => totals(m)), before);
+// activity is recorded and comes back newest first
+let acts = []; const stopA = Store.watchActivity(r.id, l => acts = l);
+logAct("add", { n: "First", a: 1, t: "spend" }); await wait(5); logAct("pay", { n: "Second", m: "2026-11" }); await wait(200);
+check("activity is recorded, newest first", acts.map(x => [x.k, x.n, x.by]), [["pay", "Second", "local"], ["add", "First", "local"]]);
+stopA();
 await Store.deleteBudget(r.id);
 
 NOW = null;
