@@ -9,9 +9,9 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="preload" href="config.js?v=20261122t" as="script">
-<link rel="preload" href="calculations.js?v=20261122t" as="script">
-<script type="module" src="cloud.js?v=20261122t"></script>
+<link rel="preload" href="config.js?v=20261122u" as="script">
+<link rel="preload" href="calculations.js?v=20261122u" as="script">
+<script type="module" src="cloud.js?v=20261122u"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- the font loads without holding up the first paint -->
@@ -534,17 +534,113 @@ button.home-metric:hover { border-color:var(--accent); }
 .look-preview-body strong { display:block; background:var(--hero); color:white; padding:9px; border-radius:7px; }
 .look-preview-body .thin { margin:0; }
 .look-preview-body .thin i { width:58%; background:var(--accent); }
-.settings-preview-layout { display:grid; gap:12px; }
-@media (min-width:1100px) {
-  .settings-page { max-width:1120px; }
-  .settings-preview-layout { grid-template-columns:minmax(0,1.35fr) minmax(0,1fr); align-items:start; }
-}
-.settings-page .settings-preview-layout .card { margin-top:0; }
 .bill-filters { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 8px; }
 .bill-filters .btn[aria-pressed="true"] { background:var(--accent-soft); color:var(--text); border-color:var(--accent); }
 .category-detail { max-width:800px; }
 .category-total { margin:0 0 14px; }
 .toast-undo { border:0; background:none; color:inherit; min-height:44px; padding:0 8px; margin-left:10px; text-decoration:underline; font-weight:800; }
+.settings-title { margin:0; font-size:clamp(1.85em,3.2vw,2.85em); letter-spacing:-.045em; line-height:1.12; }
+.settings-intro { margin:5px 0 10px; font-size:1.08em; }
+.settings-page { max-width:none; display:grid; gap:clamp(12px,1.4vw,24px); }
+.settings-column { display:contents; }
+.settings-page .card + .card { margin-top:0; }
+.settings-panel { padding:clamp(16px,1.55vw,26px); }
+.panel-heading { display:flex; align-items:flex-start; gap:13px; margin-bottom:17px; }
+.panel-heading h2 { margin:0; font-size:1.35em; letter-spacing:-.035em; }
+.panel-heading p { margin:2px 0 0; }
+.panel-icon { display:grid; place-items:center; flex:none; width:44px; height:44px; border-radius:13px; background:var(--accent-soft); color:var(--accent); }
+.panel-icon svg { width:23px; height:23px; }
+.settings-option { display:grid; gap:6px; margin:0 0 15px; }
+.settings-option:last-child { margin-bottom:0; }
+.settings-option > span { font-weight:800; }
+.settings-option .seg { margin:0; border-radius:14px; gap:4px; }
+.settings-option .seg button { min-height:38px; border:1px solid transparent; }
+.settings-option .seg button.on { border-color:var(--accent); }
+.settings-page .sw { min-width:32px; min-height:32px; }
+.settings-page .sw.on { border-color:var(--text); }
+.settings-management { display:grid; gap:7px; }
+.settings-management button { display:flex; align-items:center; gap:10px; width:100%; min-height:44px; background:var(--card2); border:1px solid var(--line); border-radius:12px; text-align:left; padding:6px 10px; font-weight:750; }
+.settings-management button:hover { border-color:var(--accent); }
+.settings-management .panel-icon { width:32px; height:32px; border-radius:8px; }
+.settings-management .panel-icon svg { width:18px; height:18px; }
+.settings-management button > span:last-child { margin-left:auto; color:var(--accent); }
+.settings-budget-ident { display:grid; align-items:start; gap:8px; grid-template-columns:4.5em minmax(0,1fr); }
+.settings-budget-ident .sharing-summary { grid-column:1/-1; margin:0; }
+.settings-preview-card { grid-row:2; }
+.look-preview { grid-template-columns:20% minmax(0,1fr); font-size:.75em; box-shadow:var(--shadow); }
+.look-preview-rail { padding:10px 6px; display:flex; flex-direction:column; gap:12px; text-align:left; }
+.look-preview-rail span { color:#c8e3da; }
+.look-preview-body { grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; padding:8px; }
+.look-preview-body .preview-month { grid-column:1/-1; }
+.look-preview-body .preview-large { grid-column:span 2; background:linear-gradient(145deg,#083831 35%,#126e58); }
+.look-preview-body .preview-tile { background:var(--card); color:var(--text); border-radius:8px; padding:8px; min-width:0; overflow-wrap:anywhere; }
+.look-preview-body .preview-tile b { display:block; margin-top:4px; }
+.look-preview-body .money { white-space:normal; }
+.look-preview-body .preview-chart, .look-preview-body .preview-categories { grid-column:span 2; }
+.preview-chart svg { display:block; width:100%; height:32px; }
+.preview-categories .thin + .thin { margin-top:5px; }
+.year-page { gap:clamp(12px,1.35vw,22px); }
+.year-page > .grid { gap:clamp(12px,1.25vw,20px); }
+.year-page .card, .year-page .kpi { padding:clamp(16px,1.65vw,27px); }
+.year-page .ttl > b { font-size:1.26em; letter-spacing:-.02em; }
+.year-page .year-total { line-height:1.08; font-size:clamp(2em,3.3vw,3.15em); margin:7px 0; }
+.year-page .year-hero .year-total { font-size:clamp(2.25em,4vw,3.65em); }
+.year-page .kpi { border:1px solid var(--line); border-radius:var(--r); }
+.year-page .kpi .kv { font-size:clamp(1.35em,2vw,1.8em); margin:8px 0 2px; }
+.year-page .year-stat { display:flex; align-items:flex-start; gap:12px; }
+.year-page .year-stat .kh { font-size:.98em; }
+.year-page .year-plan { width:100%; text-align:left; font:inherit; }
+.year-page .year-plan:hover { border-color:var(--accent); }
+.year-page .year-plan-heading { display:flex; align-items:center; gap:11px; }
+.year-page .year-plan .mrow { flex-wrap:wrap; }
+.year-page .year-plan .year-total { font-size:clamp(1.6em,2.4vw,2.5em); }
+.year-page .best-month { display:flex; align-items:center; gap:8px; margin:10px 0 0; }
+.year-page .best-month .panel-icon { width:32px; height:32px; border-radius:9px; }
+.year-page .year-categories .row2 { padding-block:10px; }
+.year-page .year-categories .ci { width:40px; height:40px; }
+.year-page .year-categories .thin { height:6px; }
+.tip.year-tip { background:#17342f; color:#f3fdf9; border-color:#ffffff28; box-shadow:0 8px 24px #001d1a52; }
+.tip.year-tip .muted { color:#c1d9d1; }
+.tip.year-tip .good { color:#87ebbd; }
+.tip.year-tip .bad { color:#ffac9e; }
+@media (min-width:860px) {
+  #app .budget-shell { --rail:clamp(192px,18vw,300px); padding-left:var(--rail); }
+  #app .topin, #app .fnav { width:var(--rail); }
+  #app .topin { padding-inline:clamp(14px,1.4vw,24px); }
+  #app .fnav { padding-inline:clamp(14px,1.4vw,24px); }
+}
+@media (min-width:1040px) {
+  .settings-page { grid-template-columns:minmax(0,1.43fr) minmax(0,1fr); align-items:start; }
+  .settings-column { display:grid; min-width:0; gap:clamp(14px,1.4vw,22px); }
+  .settings-preview-card { grid-row:auto; }
+  .settings-option { grid-template-columns:6em minmax(0,1fr); align-items:center; margin-bottom:20px; }
+  .settings-budget-ident { grid-template-columns:minmax(0,1fr) 5em minmax(0,1.65fr); }
+  .settings-budget-ident .sharing-summary { grid-column:auto; }
+}
+@media (min-width:1200px) {
+  .settings-panel { padding:clamp(20px,1.6vw,28px); }
+  .panel-icon { width:50px; height:50px; }
+  .settings-column > .settings-panel:first-child .settings-option { margin-block:24px; }
+  .settings-column > .settings-panel:first-child .settings-option:last-child { margin-bottom:0; }
+  .look-preview { min-height:235px; }
+  .look-preview-body { padding:10px; gap:8px; }
+  .settings-management button { min-height:51px; }
+  #app .topin .brand { font-size:1.55em; }
+  #app .topin .bsel { min-height:52px; font-size:1.1em; }
+  #app .fnav { padding-top:158px; }
+  #app .fnav button { min-height:56px; font-size:1.12em; }
+  #app .head:has(+ main .year-page) .nav .gb { width:53px; height:53px; }
+  #app .head:has(+ main .year-page) .nav .lbl { font-size:2.2em; }
+  .year-page .year-hero .year-svg { margin-top:5px; }
+  .year-page .year-hero .year-legend { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+  .year-page .year-stat { padding-block:20px; }
+}
+@media (max-width:430px) {
+  .year-page .year-stat { gap:6px; }
+  .year-page .year-stat .panel-icon { width:29px; height:29px; border-radius:8px; }
+  .year-page .year-stat .panel-icon svg { width:17px; height:17px; }
+  .year-page .year-stat .money { white-space:normal; }
+}
 </style>
 </head>
 <body>
@@ -555,11 +651,11 @@ button.home-metric:hover { border-color:var(--accent); }
 <div class="scrim" id="scrim" hidden></div>
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script src="config.js?v=20261122t"></script>
-<script src="calculations.js?v=20261122t"></script>
+<script src="config.js?v=20261122u"></script>
+<script src="calculations.js?v=20261122u"></script>
 <script>
 "use strict";
-const APP_VERSION = "20261122t";
+const APP_VERSION = "20261122u";
 // demo mode: no Firebase config, or ?demo on a local test server (never touches the real account)
 const LOCAL = !window.BUDGET_FIREBASE || (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && /[?&]demo\b/.test(location.search));
 
@@ -582,6 +678,13 @@ const ICON = {
   chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   pig: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9.5c1 .4 2 1.2 2 2.5M5 11a7 6 0 0 1 7-5c4 0 7 2.7 7 6s-1.5 4-3 5v2h-3v-1.5a9 9 0 0 1-3 0V19H7v-2.3A5.5 5.5 0 0 1 4.5 14H3v-3h2zM8 6.5 7 4l3 1"/><circle cx="15" cy="10.5" r=".6" fill="currentColor"/></svg>',
   target: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>',
+  screen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M12 17v4m-4 0h8"/></svg>',
+  sliders: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 5h5m4 0h9M3 12h11m4 0h3M3 19h3m4 0h11"/><circle cx="10" cy="5" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="8" cy="19" r="2"/></svg>',
+  layers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5zM3 12l9 5 9-5M3 16l9 5 9-5"/></svg>',
+  save: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 3h13l4 4v14H3V3zM7 3v6h9V3M7 21v-8h10v8"/></svg>',
+  tag: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20 4h-8l-9 9 8 8 9-9z"/><circle cx="16" cy="8" r="1"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 6v6h4"/></svg>',
+  bill: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h10l4 4v14H5zM15 3v5h4M8 11h8m-8 4h8m-8 3h5"/></svg>',
 };
 
 /* ---------- defaults & options ---------- */
@@ -801,7 +904,7 @@ function render() {
           <span style="min-width:0"><span class="t">${esc(b?.name || "Budget")} ▾</span></span></button>
         <button class="gb" data-act="hide" title="${S.hide ? "Show amounts" : "Hide amounts"}">${S.hide ? ICON.eyeoff : ICON.eye}</button>
       </div>
-      ${S.view === "settings" ? '<div class="nav"><h1 class="lbl" style="margin:0">Settings</h1></div>' : S.view !== "goals" ? `<div class="nav">
+      ${S.view === "settings" ? '<div class="nav"><div><h1 class="settings-title">Settings</h1><p class="settings-intro muted">Manage your budget, appearance and preferences.</p></div></div>' : S.view !== "goals" ? `<div class="nav">
         <button class="gb" data-act="prev" title="Previous">‹</button>
         <div class="lbl">${esc(navLbl)}</div>
         <button class="gb" data-act="next" title="Next">›</button>
@@ -1093,31 +1196,34 @@ function renderDetails(m, t, items, l, b) {
 
 function yearChart(months, metric, current, average) {
   const mini = metric === "income";
-  const width = 480, height = mini ? 90 : 220;
+  const width = 480, height = mini ? 77 : 183;
   const left = mini ? 0 : 63, right = width - 2, baseline = height - 23, top = 8;
-  const stride = (right - left) / 12, barWidth = Math.min(24, stride * .57);
+  const stride = (right - left) / 12, barWidth = Math.min(27, stride * .64);
   const rawMax = Math.max(1, ...months.map(t => t[metric]));
-  const magnitude = 10 ** Math.floor(Math.log10(rawMax / 4));
-  const step = Math.max(1, Math.ceil(rawMax / 4 / magnitude) * magnitude);
-  const max = step * 4;
+  const rough = rawMax / 6, magnitude = 10 ** Math.floor(Math.log10(rough));
+  const step = Math.max(1, magnitude * [1, 2, 2.5, 5, 10].find(n => n * magnitude >= rough));
+  const topTick = Math.ceil(rawMax / step);
+  const max = mini ? rawMax * 1.08 : step * topTick;
   const y = amount => baseline - Math.max(0, amount) / max * (baseline - top);
-  const grid = mini ? "" : [0, 1, 2, 3, 4].map(i => `<line class="year-gridline" x1="${left}" x2="${right}" y1="${y(i * step)}" y2="${y(i * step)}"/>
+  const grid = mini ? "" : Array.from({ length:topTick + 1 }, (_, i) => `<line class="year-gridline" x1="${left}" x2="${right}" y1="${y(i * step)}" y2="${y(i * step)}"/>
     ${S.hide ? "" : `<text class="year-axis" x="${left - 6}" y="${y(i * step) + 4}" text-anchor="end">${esc(money(i * step, { raw:true, round:true }))}</text>`}`).join("");
   const bars = months.map((t, i) => {
     const x = left + i * stride, mid = x + stride / 2;
     const h = Math.max(2, baseline - y(t[metric]));
     const active = t.m === current, planned = t.m > current;
     const label = monthName(t.m) + (planned ? ", planned" : active ? ", in progress" : "");
-    const fill = mini ? (active ? "#27d5ad" : "#76bcac") : active ? "var(--out)" : "color-mix(in srgb,var(--out) 56%,var(--card2))";
+    const fill = mini ? (active ? "#03b99d" : "url(#year-income-fill)") : active ? "#ed7554" : "url(#year-out-fill)";
     return `<g class="year-month ${planned ? "planned" : active ? "current" : ""}" role="button" tabindex="0"
       aria-label="Open ${esc(label)}" data-act="ymonth" data-m="${t.m}"
       data-year-tip="${esc(JSON.stringify([t.income, t.out, t.left, average]))}">
       <rect class="year-hover" x="${x + 1}" y="0" width="${stride - 2}" height="${height}" rx="6"/>
-      <rect class="year-column" x="${mid - barWidth / 2}" y="${baseline - h}" width="${barWidth}" height="${h}" rx="5" fill="${fill}"/>
+      <rect class="year-column" x="${mid - barWidth / 2}" y="${baseline - h}" width="${barWidth}" height="${h}" rx="6" fill="${fill}"/>
       <text class="year-axis" x="${mid}" y="${height - 5}" text-anchor="middle" font-weight="${active ? 800 : 600}">${monthName(t.m, { month:mini ? "narrow" : "short" })}</text>
     </g>`;
   }).join("");
   return `<svg class="year-svg" viewBox="0 0 ${width} ${height}" role="group" aria-label="${mini ? "Monthly income" : "Money going out per month"}">
+    ${mini ? '<defs><linearGradient id="year-income-fill" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#8cd6c4"/><stop offset="100%" stop-color="#449d8c"/></linearGradient></defs>'
+      : '<defs><linearGradient id="year-out-fill" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#f7baa6"/><stop offset="100%" stop-color="#ee9c83"/></linearGradient></defs>'}
     ${grid}${bars}${average !== null ? `<line class="year-avg" x1="${left}" x2="${right}" y1="${y(average)}" y2="${y(average)}"/>` : ""}
   </svg>
   <div class="year-legend muted small">
@@ -1147,7 +1253,7 @@ function renderYear() {
   const bigBills = {};
   for (const m of ms) for (const i of monthItems(m)) if (!i.skipped && i.type === "bill") { const o = (bigBills[i.id] ||= { name: i.name, c: i.category, v: 0 }); o.v = r2(o.v + i.amt); }
   const topBills = Object.values(bigBills).sort((a, b) => b.v - a.v).slice(0, 5);
-  return `<div class="grid two">
+  return `<div class="grid two year-page">
     <div class="grid">
       <section class="card year-hero">
         <div class="ttl"><b>Income in ${y}</b>${pinc ? chip(change(inc, pinc), false) : ""}</div>
@@ -1156,20 +1262,20 @@ function renderYear() {
         ${incomeChart}
       </section>
       <div class="kpis">
-        <div class="kpi"><div class="kh"><span>↙️</span>Left over</div><div class="kv ${inc - out - saved < 0 ? "bad" : "good"}">${money(inc - out - saved, { round: true })}</div><div class="ks">after bills, spending & savings</div></div>
-        <div class="kpi"><div class="kh"><span>🐷</span>Into savings</div><div class="kv">${money(saved, { round: true })}</div><div class="ks">avg ${money(past.length ? sum(past, t => t.left) / past.length : 0, { round: true })} left a month</div></div>
+        <div class="kpi year-stat">${panelIcon(ICON.save)}<div><div class="kh">Left over</div><div class="kv ${inc - out - saved < 0 ? "bad" : "good"}">${money(inc - out - saved, { round: true })}</div><div class="ks">after bills, spending & savings</div></div></div>
+        <div class="kpi year-stat">${panelIcon(ICON.pig)}<div><div class="kh">Into savings</div><div class="kv">${money(saved, { round: true })}</div><div class="ks">avg ${money(past.length ? sum(past, t => t.left) / past.length : 0, { round: true })} left a month</div></div></div>
       </div>
       <div class="card"><div class="ttl"><b>Going out</b>${pout ? chip(change(out, pout), true) : `<span class="muted small">${y}</span>`}</div>
         <div class="year-total">${money(out, { round: true })}</div>
         ${out > 0 ? outChart : `<p class="muted small" style="margin:8px 0 0">Nothing has gone out in ${y} yet. Once bills and spending are added, each month gets a bar here.</p>`}
-        ${best && best.left > 0 ? `<p class="muted small" style="text-align:center;margin:6px 0 0">Best month so far: <b>${monthName(best.m, { month: "long" })}</b> with ${money(best.left, { round: true })} left. Tap a month to open it.</p>` : ""}
+        ${best && best.left > 0 ? `<p class="best-month muted small">${panelIcon(ICON.chart)}<span>Best month so far: <b>${monthName(best.m, { month: "long" })}</b> with ${money(best.left, { round: true })} left. Tap a month to open it.</span></p>` : ""}
       </div>
     </div>
     <div class="grid">
-      ${(() => { const np = billsPlan(cy + 1); return `<div class="card" data-act="billplan" style="cursor:pointer"><div class="ttl"><b>🧾 Next year's bills</b><span class="lk" style="color:var(--accent);font-weight:700">Plan for them ›</span></div>
-        ${np.total ? `<div class="mrow"><span class="v" style="font-size:1.4em">${money(np.total, { round: true })}</span><span class="muted small">≈ ${money(np.total / 12, { round: true })} a month</span></div><div class="muted small" style="margin-top:4px">${np.items.length} bills in ${cy + 1}. See how much to put aside each month to have it ready.</div>`
-          : `<p class="muted small" style="margin:4px 0">No bills planned for ${cy + 1} yet. Bills that repeat show up here automatically.</p>`}</div>`; })()}
-      <div class="card"><div class="ttl"><b>Categories</b><span class="muted small">${y}</span></div>${catRows.length ? catRows.slice(0, 7).map(([id, v]) => { const c = cat(id);
+      ${(() => { const np = billsPlan(cy + 1); return `<button class="card year-plan" data-act="billplan"><span class="ttl"><b class="year-plan-heading">${panelIcon(ICON.bill)} Next year’s bills</b><span class="lk" style="color:var(--accent);font-weight:700">Plan for them ›</span></span>
+        ${np.total ? `<span class="mrow"><span class="year-total">${money(np.total, { round: true })}</span><span class="muted small">≈ ${money(np.total / 12, { round: true })} a month</span></span><span class="muted small">${np.items.length} bills in ${cy + 1}. See how much to put aside each month.</span>`
+          : `<span class="muted small">No bills planned for ${cy + 1} yet. Bills that repeat show up here automatically.</span>`}</button>`; })()}
+      <div class="card year-categories"><div class="ttl"><b>Categories</b><span class="muted small">${y}</span></div>${catRows.length ? catRows.slice(0, 7).map(([id, v]) => { const c = cat(id);
         return `<div class="row2" style="cursor:default"><span class="ci" style="background:${c.color}1f">${esc(c.emoji)}</span><span class="mn"><b>${esc(c.name)}</b><span>${Math.round(v / (out || 1) * 100)}% of everything going out</span><div class="thin"><i style="width:${v / catRows[0][1] * 100}%;background:${c.color}"></i></div></span><span class="rt"><b>${money(v, { round: true })}</b></span></div>`; }).join("") : `<p class="muted small" style="margin:4px 0">No spending categories recorded in ${y} yet. Bills and spending you add show up here, biggest first.</p>`}</div>
       <div class="card"><div class="ttl"><b>Biggest bills</b></div>${topBills.length ? topBills.map(x => { const c = cat(x.c);
         return `<div class="row2" style="cursor:default"><span class="ci" style="background:${c.color}1f">${esc(c.emoji)}</span><span class="mn"><b>${esc(x.name || c.name)}</b><span>${money(x.v / 12, { round: true })} a month on average</span></span><span class="rt"><b>${money(x.v, { round: true })}</b></span></div>`; }).join("") : `<p class="muted small" style="margin:4px 0">No bills recorded in ${y} yet. Each bill you add shows here with its total for the year.</p>`}</div>
@@ -1592,36 +1698,30 @@ function openBudgets() {
   });
 }
 
+const panelIcon = icon => `<span class="panel-icon" aria-hidden="true">${icon}</span>`;
+const panelHeading = (title, description, icon) => `<div class="panel-heading">${panelIcon(icon)}<div><h2>${title}</h2><p class="muted">${description}</p></div></div>`;
+
 function renderSettings() {
   const b = B(), l = look(), owner = b?.owner === S.user.uid;
   const opt = (o, v) => Object.entries(o).map(([k, t]) => `<option value="${k}" ${k === v ? "selected" : ""}>${t}</option>`).join("");
-  return `<div class="settings-page"><div class="settings-preview-layout"><section class="card">
-    <h2>Appearance</h2>
-    <div class="f"><span>Theme</span><div class="seg" id="sTheme" style="margin:0">${[["auto", "Auto"], ["light", "Light"], ["dark", "Dark"]].map(([k, t]) => `<button type="button" data-v="${k}" class="${l.theme === k ? "on" : ""}">${t}</button>`).join("")}</div></div>
-    <div class="f"><span>Colour</span><div class="swatches" id="sAcc">${Object.entries(ACCENTS).map(([k, c]) => `<button type="button" class="sw ${l.accent === k ? "on" : ""}" title="${k}" style="background:${c}" data-v="${k}"></button>`).join("")}</div></div>
-    <div class="f"><span>Text size</span><div class="seg" id="sSize" style="margin:0">${[["normal", "Normal"], ["large", "Large"], ["xl", "Extra large"]].map(([k, t]) => `<button type="button" data-v="${k}" class="${l.size === k ? "on" : ""}">${t}</button>`).join("")}</div></div>
+  const controls = (id, label, current, values) => `<div class="settings-option"><span>${label}</span><div class="seg" id="${id}" role="group" aria-label="${label}">
+    ${values.map(([k, name, mark]) => `<button type="button" data-v="${k}" aria-pressed="${current === k}" class="${current === k ? "on" : ""}">${mark ? `<span aria-hidden="true">${mark} </span>` : ""}${name}</button>`).join("")}</div></div>`;
+  return `<div class="settings-page"><div class="settings-column"><section class="card settings-panel">
+    ${panelHeading("Appearance", "Change how Budget looks and feels.", ICON.screen)}
+    ${controls("sTheme", "Theme", l.theme, [["auto", "Auto", "☼"], ["light", "Light", "☀"], ["dark", "Dark", "☾"]])}
+    <div class="settings-option"><span>Colour</span><div class="swatches" id="sAcc" role="group" aria-label="Accent colour">${Object.entries(ACCENTS).map(([k, c]) => `<button type="button" class="sw ${l.accent === k ? "on" : ""}" title="${k}" aria-label="${k}" aria-pressed="${l.accent === k}" style="background:${c}" data-v="${k}"></button>`).join("")}</div></div>
+    ${controls("sSize", "Text size", l.size, [["normal", "Normal"], ["large", "Large"], ["xl", "Extra large"]])}
     </section>
-    <section class="card"><h2>Appearance preview</h2>
-      <div class="look-preview" aria-label="Sample dashboard in your selected appearance">
-        <div class="look-preview-rail">Budget</div>
-        <div class="look-preview-body">
-          <span class="muted small">Sample month</span>
-          <strong>Left after bills <span style="display:block">${money(1840)}</span></strong>
-          <span class="small">Spending this month</span>
-          <div class="thin" aria-hidden="true"><i></i></div>
-        </div>
-      </div>
-    </section></div>
-    <section class="card" style="margin-top:12px"><h2>Behaviour</h2>
+    <section class="card settings-panel">${panelHeading("Behaviour", "Set how the app opens and orders your data.", ICON.sliders)}
     <div class="cols">
       <label class="f"><span>Open on</span><select id="sStart">${opt({ month: "Home", year: "Year", goals: "Savings" }, l.start)}</select></label>
       <label class="f"><span>Order bills by</span><select id="sSort">${opt({ due: "Due date", unpaid: "Unpaid first", amount: "Amount", name: "Name" }, l.billSort)}</select></label>
     </div>
     <label class="check"><input type="checkbox" id="sHide" ${l.hideOnStart ? "checked" : ""}> Hide amounts when the app opens (tap 👁 to show)</label></section>
 
-    ${b ? `<section class="card"><h2>This budget</h2>
-    <p class="muted small">${b.kind === "shared" ? `Shared with ${esc(sharedWith(b))}` : "Private budget · only you can see it"}</p>
-    <div class="cols" style="grid-template-columns:70px 1fr">
+    ${b ? `<section class="card settings-panel">${panelHeading("This budget", "Details and display options for this budget.", ICON.layers)}
+    <div class="settings-budget-ident">
+      <p class="sharing-summary muted small"><b>${b.kind === "shared" ? "Shared with" : "Private budget"}</b><br>${b.kind === "shared" ? esc(sharedWith(b)) : "Only you can see it"}</p>
       <label class="f"><span>Icon</span><input type="text" id="bE" maxlength="4" value="${esc(b.emoji || "💰")}" style="text-align:center"></label>
       <label class="f"><span>Name</span><input type="text" id="bN" maxlength="40" value="${esc(b.name)}"></label>
     </div>
@@ -1630,13 +1730,13 @@ function renderSettings() {
       <label class="f"><span>Number style</span><select id="bNum">${opt(Object.fromEntries(Object.entries(NUMSTYLES).map(([k, v]) => [k, v[1]])), b.numStyle || "dot")}</select></label>
     </div>
     <label class="check"><input type="checkbox" id="bCarry" ${b.carry ? "checked" : ""}> Carry what's left over into the next month</label>
-    <div class="actions" style="margin-top:0"><button class="btn" id="bSave">Save budget settings</button><button class="btn" id="bCats">Edit categories</button><button class="btn" id="bLims">Spending limits</button><button class="btn" id="bAct">Activity history</button></div>
+    </section>` : ""}
+    ${b?.kind === "shared" ? `<section class="card settings-panel"><h2>People</h2>
 
-    ${b.kind === "shared" ? `<h4>People</h4>
       <div>${(b.members || []).map(u => `<div class="item" style="cursor:default">${avatar(u)}<div class="main"><div class="name">${esc(b.memberNames?.[u] || "someone")}${u === S.user.uid ? " (you)" : ""}${u === b.owner ? '<span class="tag acc">owner</span>' : ""}</div></div>${owner && u !== S.user.uid ? `<button class="btn sm dang" data-kick="${esc(u)}">Remove</button>` : ""}</div>`).join("")}</div>
       ${owner ? `<div class="box"><label class="f"><span>Add a person — paste their sharing code</span><input type="text" id="pC" placeholder="their code from Settings → Your account" autocomplete="off"></label>
         <label class="f"><span>Their name</span><input type="text" id="pN" maxlength="30" placeholder="e.g. Mum"></label><button class="btn" id="pAdd">Add person</button></div>` : ""}
-      <div class="actions">${owner ? `<button class="btn dang" id="bDel">Delete this budget</button>` : `<button class="btn dang" id="bLeave">Leave this budget</button>`}</div>` : ""}</section>` : ""}
+      <div class="actions">${owner ? `<button class="btn dang" id="bDel">Delete this budget</button>` : `<button class="btn dang" id="bLeave">Leave this budget</button>`}</div></section>` : ""}
 
     <section class="card"><h2>Your account</h2>
     <label class="f"><span>Your name (shown to people you share with)</span><input type="text" id="aN" maxlength="30" value="${esc(myName())}"></label>
@@ -1648,7 +1748,26 @@ function renderSettings() {
     <section class="card"><h2>Backup</h2>
     <div class="actions" style="margin-top:0"><button class="btn" id="xJ">Download backup</button><button class="btn" id="xC">Export ${S.year} to Excel (CSV)</button><button class="btn" id="xI">Restore backup</button></div>
     <input type="file" id="xF" accept=".json,application/json" hidden>
-    <p class="muted small" style="margin-top:18px">Version ${APP_VERSION}${LOCAL ? " · demo" : ""}</p></section></div>`;
+    <p class="muted small" style="margin-top:18px">Version ${APP_VERSION}${LOCAL ? " · demo" : ""}</p></section></div>
+    <div class="settings-column">
+      <section class="card settings-panel settings-preview-card">${panelHeading("Appearance preview", "A live glimpse of your current settings.", ICON.eye)}
+        <div class="look-preview" aria-label="Sample dashboard in your selected appearance">
+          <div class="look-preview-rail" aria-hidden="true"><b>Budget</b><span>Home</span><span>Year</span><span>Savings</span><span>Settings</span></div>
+          <div class="look-preview-body">
+            <b class="preview-month">Sample month</b>
+            <strong class="preview-large">Left after bills<br>${money(3204.13)}</strong>
+            <span class="preview-tile">Due<b>${money(13.99)}</b></span>
+            <span class="preview-tile">Per day<b>${money(228.56)}</b></span>
+            <div class="preview-tile preview-chart" aria-hidden="true"><svg viewBox="0 0 120 32" preserveAspectRatio="none"><path d="M0 29 16 25 25 25 40 19 52 18 70 13 84 13 94 8 120 5V32H0Z" fill="var(--accent-soft)"/><path d="M0 29 16 25 25 25 40 19 52 18 70 13 84 13 94 8 120 5" fill="none" stroke="var(--accent)" stroke-width="2"/></svg></div>
+            <div class="preview-tile preview-categories" aria-hidden="true">${[58, 33, 22].map(p => `<div class="thin"><i style="width:${p}%"></i></div>`).join("")}</div>
+          </div>
+        </div>
+      </section>
+      ${b ? `<section class="card settings-panel">${panelHeading("Budget management", "Manage this budget and related data.", ICON.gear)}
+        <div class="settings-management">${[["bSave", "Save budget settings", ICON.save], ["bCats", "Edit categories", ICON.tag], ["bLims", "Spending limits", ICON.chart], ["bAct", "Activity history", ICON.clock]].map(([id, label, icon]) =>
+          `<button id="${id}">${panelIcon(icon)}${label}<span aria-hidden="true">›</span></button>`).join("")}</div>
+      </section>` : ""}
+    </div></div>`;
 }
 
 function bindSettings(sh) {
