@@ -120,9 +120,19 @@ export async function browser() {
   if (!exe) throw new Error("No Edge or Chrome found. Set BROWSER to its path.");
   const profile = mkdtempSync(join(tmpdir(), "budget-browser-")), port = 9300 + Math.floor(Math.random() * 500);
   const proc = spawn(exe, ["--headless=new", "--disable-gpu", "--hide-scrollbars", "--no-first-run", "--no-default-browser-check", "--lang=en-GB",
-    `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, "about:blank"], { stdio: "ignore" });
+    `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, "about:blank"], { stdio: ["ignore", "ignore", "pipe"] });
+  let startupLog = "", launchError;
+  proc.stderr.on("data", chunk => { startupLog = (startupLog + chunk).slice(-4000); });
+  proc.once("error", error => { launchError = error; });
   let target;
-  for (let i = 0; i < 60 && !target; i++) { try { target = (await (await fetch(`http://127.0.0.1:${port}/json/list`)).json()).find(t => t.type === "page"); } catch {} if (!target) await sleep(250); }
+  for (let i = 0; i < 60 && !target && !launchError && proc.exitCode === null && proc.signalCode === null; i++) {
+    try { target = (await (await fetch(`http://127.0.0.1:${port}/json/list`)).json()).find(t => t.type === "page"); } catch {}
+    if (!target) await sleep(250);
+  }
+  if (!target) {
+    proc.kill();
+    throw new Error(`Could not start browser at ${exe}: ${launchError?.message || startupLog.trim() || "debugging endpoint unavailable"}`);
+  }
   const ws = new WebSocket(target.webSocketDebuggerUrl);
   await new Promise(r => ws.addEventListener("open", r, { once: true }));
   let id = 0; const pending = new Map(), onLoad = [], errors = [];

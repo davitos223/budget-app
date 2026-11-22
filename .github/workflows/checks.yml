@@ -19,7 +19,7 @@ jobs:
         with:
           node-version: '22'
       - run: node tools/check-version.mjs
-      - run: node tools/test.mjs
+      - run: BROWSER="$(command -v google-chrome)" node tools/test.mjs
 
   rules:
     name: Shared and private budget permissions
