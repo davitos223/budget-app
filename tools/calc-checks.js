@@ -118,6 +118,18 @@ check("groceries over its limit", L.find(x => x.id === "c9"), { id: "c9", c: cat
 check("utilities: 123,50 used, water still to pay", (({ used, done }) => ({ used, done }))(L.find(x => x.id === "c5")), { used: 123.5, done: 85.4 });
 delete S.budgets[0].limits;
 
+/* ---------- forecast and insights ---------- */
+check("forecast with no history uses this month's pace (20,29 in 22 days → 7,38 for the last 8)", (({ more, restDays, end, usual }) => ({ more, restDays, end, usual }))(forecast("2026-11")), { more: 7.38, restDays: 8, end: 1678.83, usual: null });
+S.entries.push(E({ id: "old", type: "spend", name: "Old shop", amount: 300, repeat: "once", start: "2026-10", category: "c9" })); S.dataStamp++; carryCache.clear();
+check("forecast uses the usual monthly spending when there is history", (({ more, end, usual }) => ({ more, end, usual }))(forecast("2026-11")), { more: 279.71, end: 1406.5, usual: 300 });
+check("insights: groceries down, utilities up, biggest cost", insights("2026-11").map(x => x.key), ["up:c5", "down:c9", "out", "top:c4"]);
+S.entries.pop(); S.dataStamp++; carryCache.clear();
+check("insights: utilities up 38,10 on last month, housing biggest", insights("2026-11").map(x => x.key), ["up:c5", "top:c4"]);
+check("no forecast for other months", forecast("2026-10"), null);
+S.budgets[0].limits = { c9: 22 };
+check("insights warn near a limit (20,29 of 22 = 92%)", insights("2026-11").some(x => x.key === "near:c9"), true);
+delete S.budgets[0].limits;
+
 /* ---------- fill in earlier months ---------- */
 check("monthly fills from the chosen month", backfillStart(ent("inc"), "2025-10"), "2025-10");
 check("quarterly keeps its quarters, never before the chosen month", backfillStart(ent("q"), "2025-10"), "2025-11");

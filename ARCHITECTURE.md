@@ -48,6 +48,8 @@ budgets/{bid}/goals/{id}        name, emoji, target, by "YYYY-MM"|null, color, m
 | `carryIn(m)` | With carry-over on: the sum of every earlier month's left, back to the first month with data (20 years at most) |
 | `safeToSpend(m)` | This month only: max(0, left) ÷ days left including today |
 | `limitsFor(m)` | Each limited category: limit, used (bills + spending, paid or not), done (the paid part) |
+| `forecast(m)` | This month only: left − likely further spending (usual monthly spending of the last 3 months minus what's spent so far; with no history, this month's daily pace × days left) |
+| `insights(m)` | Up to 4 observations: biggest category rise and fall vs last month (≥ €20 and ≥ 10%), total going out ±5% or more, saved ≥ €20 more, limits at 80%+ or over, the biggest cost |
 | `backfillStart(e, from)` | For *Fill in earlier months*: the first month on or after `from` that keeps the item's rhythm |
 
 Rules that are easy to get wrong:
@@ -72,7 +74,7 @@ Checked from outside on 2026-11-22: reads without a login give `PERMISSION_DENIE
 
 ## Tests
 
-- `node tools/test.mjs`: **62 checks** of the money maths on a demo copy, against numbers worked out by hand. They cover parsing amounts, every repeat rule across year ends, one household's month in full, autopay timing, one-month changes and skips, safe-to-spend at month ends, February and leap years, year totals, carry-over, limits, *Fill in earlier months*, formatting, and backup → restore giving identical totals. **Run it before every release.**
+- `node tools/test.mjs`: **68 checks** of the money maths on a demo copy, against numbers worked out by hand. They cover parsing amounts, every repeat rule across year ends, one household's month in full, autopay timing, one-month changes and skips, safe-to-spend at month ends, February and leap years, year totals, carry-over, limits, *Fill in earlier months*, formatting, forecast, insights, and backup → restore giving identical totals. **Run it before every release.**
 - `node tools/screenshots.mjs`: remakes the README pictures from invented demo data.
 - Still to do: automated tests of `firestore.rules` on the Firebase emulator (needs Java 21).
 

@@ -9,6 +9,7 @@ const scrollTo = sel => `const p = document.querySelector("${sel}"); scrollTo(0,
 const SHOTS = {
   "phone-home": [PHONE, ""],
   "phone-bills": [PHONE, "", `S.sub = "details"; _render(); await new Promise(r => setTimeout(r, 200));`],
+  "phone-insights": [PHONE, "", `const c = [...document.querySelectorAll(".ttl b")].find(x => x.textContent.includes("Insights")); scrollTo(0, c.getBoundingClientRect().top + scrollY - 90);`],
   "phone-cats": [PHONE, "", `const c = [...document.querySelectorAll(".ttl b")].find(x => x.textContent === "Categories"); scrollTo(0, c.getBoundingClientRect().top + scrollY - 90);`],
   "phone-limits": [PHONE, "", `openAllCats(); document.activeElement.blur();`],
   "phone-add": [PHONE, "", `openEntry(null, "spend"); const a = document.querySelector("#fAmt"); a.value = "42,80"; document.querySelector("#fName").value = "Farmers market"; document.activeElement.blur();`],
