@@ -48,7 +48,7 @@ Enter your income and bills once, tick them off as you pay, and always know what
 - **Just this month:** change a bill's amount or skip it for one month without touching the others.
 - **Spending limits** for each category, e.g. "€194 left of €600", with "You're doing great 👍", "Getting close" or "Over by …".
 - **Savings goals** with a target and a date. The app works out how much to put aside each month, and money you put in counts in that month's budget.
-- **The year at a glance:** monthly bars, totals, the best month, a category donut and the biggest bills.
+- **The year at a glance:** income per month, going out per month (bars), what's left over, the best month, categories and the biggest bills.
 - **Private budgets for everyone**, plus optional **shared** ones (e.g. "Household") that show who added what.
 - **Make it yours:** theme, 8 colours, 3 text sizes, the page it opens on, bill order, hide-amounts mode, currency and number style, editable categories, carry-over.
 - **Backups:** download or restore a backup, and export a year to Excel (CSV).
@@ -60,7 +60,14 @@ Enter your income and bills once, tick them off as you pay, and always know what
 
 <img src="screenshots/desktop-light.png" width="100%" alt="Overview on a computer">
 
-The coloured header holds the month switcher. The white card shows **left after bills**, with the coloured bar splitting the month into bills, spending, savings and what's left. Underneath: how much is **still to pay**, how much is **safe to spend** per day for the rest of the month, and what you've **saved**. The rings compare money going out and money left over with last month.
+Each month has two tabs. **Summary** shows only what matters first:
+
+- The **gauge** shows **left after bills** in the middle. Its arc fills with bills, spending and savings, and the grey part is what's still free.
+- **Still to pay** and **safe to spend** per day for the rest of the month.
+- **This month's money:** one bar for going out against coming in.
+- The next **3 upcoming payments**, your **top categories** (with their limits) and **one savings goal**.
+
+**Details** has the full lists: bills, spending, income, savings, who added what, and notes. The floating bar at the bottom switches between Overview, Year and Savings. Its **+** adds something new.
 
 ### Bills and upcoming payments
 
@@ -71,15 +78,16 @@ Tap the circle to mark a bill as paid. Bills on *autopay* tick themselves on the
 
 ### Spending limits
 
-<img src="screenshots/phone-limits.png" width="32%" alt="Phone: spending limits">
+<img src="screenshots/phone-cats.png" width="32%" alt="Phone: categories with limits on the summary">&nbsp;
+<img src="screenshots/phone-limits.png" width="32%" alt="Phone: all categories and limits">
 
-Give categories such as Groceries or Eating out a monthly limit. Each limit shows how much is left, a bar (darker for what's paid, lighter for bills still to come) and a friendly status. When you set a limit, the app shows your average for the last three months so you can pick a realistic number.
+Give categories such as Groceries or Eating out a monthly limit. The summary shows "€194 left to spend" with a thin bar and the change against last month for each category. **See all** lists every category. When you set a limit, the app shows your average for the last three months so you can pick a realistic number.
 
 ### Adding things
 
 <img src="screenshots/phone-add.png" width="32%" alt="Phone: add spending">
 
-On the phone, the **+** button adds spending, a bill or income in a few taps. Amounts work with a comma or a dot. The date is optional: pick a day, month and year, or leave the day on “—” to just use the month.
+The **+** button adds spending, a bill or income: a big amount, the name, a row of categories you can swipe through, and the date. Repeat-until and notes sit under *More options*. Amounts work with a comma or a dot. The date is optional: pick a day, month and year, or leave the day on “—” to just use the month.
 
 If a month has no income yet because you only started using the app later, the month shows a **Fill in from your current income** button. The same tool is under **Income → Earlier months**.
 
@@ -93,7 +101,7 @@ Income against bills and spending for every month (faded bars are months still t
 
 <img src="screenshots/phone-goals.png" width="32%" alt="Phone: savings goals">
 
-Make a goal for a holiday, a new sofa or an emergency fund. Put money in or take it out whenever you like; it shows up in that month's budget. With a target date, the app tells you how much to put aside each month.
+Make a goal for a holiday, a new sofa or an emergency fund. Each card shows one number, one bar and **+ Add money**. Tap a card to take money out, see its history and how much to put aside each month, or edit it. Money you put in shows up in that month's budget.
 
 ### Settings and themes
 

@@ -8,15 +8,16 @@ const PHONE = [390, 844, 3, true], DESK = [1440, 900, 2, false];
 const scrollTo = sel => `const p = document.querySelector("${sel}"); scrollTo(0, p.getBoundingClientRect().top + scrollY - 12);`;
 const SHOTS = {
   "phone-home": [PHONE, ""],
-  "phone-bills": [PHONE, "", scrollTo("#billsCard")],
-  "phone-limits": [PHONE, "", `const s = [...document.querySelectorAll(".sec")].find(x => x.textContent.startsWith("Spending limits")); scrollTo(0, s.getBoundingClientRect().top + scrollY - 12);`],
+  "phone-bills": [PHONE, "", `S.sub = "details"; _render(); await new Promise(r => setTimeout(r, 200));`],
+  "phone-cats": [PHONE, "", `const c = [...document.querySelectorAll(".ttl b")].find(x => x.textContent === "Categories"); scrollTo(0, c.getBoundingClientRect().top + scrollY - 90);`],
+  "phone-limits": [PHONE, "", `openAllCats(); document.activeElement.blur();`],
   "phone-add": [PHONE, "", `openEntry(null, "spend"); const a = document.querySelector("#fAmt"); a.value = "42,80"; document.querySelector("#fName").value = "Farmers market"; document.activeElement.blur();`],
   "phone-goals": [PHONE, "view=goals"],
   "phone-dark": [PHONE, "theme=dark"],
   "desktop-light": [DESK, ""],
   "desktop-dark": [DESK, "theme=dark"],
   "desktop-year": [DESK, "view=year", `scrollTo(0, 640);`],
-  "desktop-month": [DESK, "", `scrollTo(0, 820);`],
+  "desktop-month": [DESK, "", `S.sub = "details"; _render(); await new Promise(r => setTimeout(r, 200));`],
   "desktop-settings": [DESK, "", `openSettings(); document.activeElement.blur();`],
 };
 
