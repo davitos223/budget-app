@@ -9,8 +9,8 @@ const scrollTo = sel => `const p = document.querySelector("${sel}"); scrollTo(0,
 const SHOTS = {
   "phone-home": [PHONE, ""],
   "phone-bills": [PHONE, "", `S.sub = "details"; _render(); await new Promise(r => setTimeout(r, 200));`],
-  "phone-insights": [PHONE, "", `const c = [...document.querySelectorAll(".ttl b")].find(x => x.textContent.includes("Insights")); scrollTo(0, c.getBoundingClientRect().top + scrollY - 90);`],
-  "phone-cats": [PHONE, "", `const c = [...document.querySelectorAll(".ttl b")].find(x => x.textContent === "Categories"); scrollTo(0, c.getBoundingClientRect().top + scrollY - 90);`],
+  "phone-insights": [PHONE, "", `S.sub = "details"; _render(); const c = [...document.querySelectorAll(".ttl b")].find(x => x.textContent.includes("Insights")); scrollTo(0, c.getBoundingClientRect().top + scrollY - 90);`],
+  "phone-cats": [PHONE, "", `S.sub = "details"; _render(); ${scrollTo(".limit-status")}`],
   "phone-limits": [PHONE, "", `openAllCats(); document.activeElement.blur();`],
   "phone-add": [PHONE, "", `openEntry(null, "spend"); const a = document.querySelector("#fAmt"); a.value = "42,80"; document.querySelector("#fName").value = "Farmers market"; document.activeElement.blur();`],
   "phone-goals": [PHONE, "view=goals"],
@@ -18,13 +18,13 @@ const SHOTS = {
   "phone-billplan2": [PHONE, "", `openBillPlan(); document.activeElement.blur(); const sh = document.querySelector(".sheet"); sh.scrollTop = sh.scrollHeight;`],
   "phone-dark": [PHONE, "theme=dark"],
   "phone-activity": [PHONE, "", `openActivity(); document.activeElement.blur();`],
-  "phone-recent": [PHONE, "", `const c = [...document.querySelectorAll(".ttl b")].find(x => x.textContent.includes("Recent activity")); scrollTo(0, c.getBoundingClientRect().top + scrollY - 90);`],
+  "phone-recent": [PHONE, "", `S.sub = "details"; _render(); const c = [...document.querySelectorAll(".ttl b")].find(x => x.textContent.includes("Recent activity")); scrollTo(0, c.getBoundingClientRect().top + scrollY - 90);`],
   "phone-goalview": [PHONE, "view=goals", `openGoalView(S.goals.find(g => g.name === "Summer holiday").id); document.activeElement.blur(); const sh = document.querySelector(".sheet"); sh.scrollTop = 260;`],
   "desktop-light": [DESK, ""],
   "desktop-dark": [DESK, "theme=dark"],
   "desktop-year": [DESK, "view=year", `scrollTo(0, 640);`],
   "desktop-month": [DESK, "", `S.sub = "details"; _render(); await new Promise(r => setTimeout(r, 200));`],
-  "desktop-settings": [DESK, "", `openSettings(); document.activeElement.blur();`],
+  "desktop-settings": [DESK, "view=settings"],
 };
 
 const only = process.argv.slice(2);

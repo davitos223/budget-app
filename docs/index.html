@@ -9,9 +9,9 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="preload" href="config.js?v=20261122q" as="script">
-<link rel="preload" href="calculations.js?v=20261122q" as="script">
-<script type="module" src="cloud.js?v=20261122q"></script>
+<link rel="preload" href="config.js?v=20261122r" as="script">
+<link rel="preload" href="calculations.js?v=20261122r" as="script">
+<script type="module" src="cloud.js?v=20261122r"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- the font loads without holding up the first paint -->
@@ -467,6 +467,38 @@ button.home-metric:hover { border-color:var(--accent); }
 }
 @media (min-width:860px) { body { padding-bottom:24px; } }
 .beta-mark { padding:2px 6px; border:1px solid #ffffff55; border-radius:5px; font-size:.67em; align-self:center; }
+.balance-flow .good { color:#08794a; }
+.balance-flow .bad { color:#bf3446; }
+.balance-flow .fc b .money { color:inherit; }
+:root[data-theme=dark] .balance-flow .good { color:var(--good); }
+:root[data-theme=dark] .balance-flow .bad { color:var(--bad); }
+@media (prefers-color-scheme:dark) {
+  :root:not([data-theme=light]) .balance-flow .good { color:var(--good); }
+  :root:not([data-theme=light]) .balance-flow .bad { color:var(--bad); }
+}
+.limit-status { --status:var(--accent); padding:10px 0; border-top:1px solid var(--line); }
+.limit-status.close { --status:#bd5b08; }
+.limit-status.critical { --status:#c2344b; }
+.limit-status .thin i { background:var(--status); }
+.limit-status .limit-label { color:var(--status); font-weight:800; }
+:root[data-theme=dark] .limit-status.close { --status:#ffbc69; }
+:root[data-theme=dark] .limit-status.critical { --status:#ff8798; }
+@media (prefers-color-scheme:dark) {
+  :root:not([data-theme=light]) .limit-status.close { --status:#ffbc69; }
+  :root:not([data-theme=light]) .limit-status.critical { --status:#ff8798; }
+}
+.settings-page { max-width:760px; }
+.settings-page h2 { font-size:1.08em; margin:0 0 14px; }
+.settings-page .card + .card { margin-top:12px; }
+.settings-page .actions { flex-wrap:wrap; }
+.year-month { cursor:pointer; }
+.year-month:is(:hover,:focus-visible) .bg { fill:var(--accent-soft); stroke:var(--accent); stroke-width:.8; }
+.year-month:is(:hover,:focus-visible) .year-bar { fill:var(--accent); }
+.tip.year-tip { background:var(--card); color:var(--text); border:1px solid var(--line); padding:12px; min-width:174px; max-width:calc(100vw - 16px); white-space:normal; }
+.year-tip strong { display:block; margin-bottom:6px; }
+.year-tip-row { display:flex; justify-content:space-between; gap:14px; padding:2px 0; }
+.year-tip-row:last-of-type { border-top:1px solid var(--line); margin-top:4px; padding-top:5px; }
+.year-tip .tip-hint { display:block; margin-top:6px; font-size:.9em; }
 </style>
 </head>
 <body>
@@ -477,11 +509,11 @@ button.home-metric:hover { border-color:var(--accent); }
 <div class="scrim" id="scrim" hidden></div>
 <div class="toast" id="toast" hidden></div>
 
-<script src="config.js?v=20261122q"></script>
-<script src="calculations.js?v=20261122q"></script>
+<script src="config.js?v=20261122r"></script>
+<script src="calculations.js?v=20261122r"></script>
 <script>
 "use strict";
-const APP_VERSION = "20261122q";
+const APP_VERSION = "20261122r";
 // demo mode: no Firebase config, or ?demo on a local test server (never touches the real account)
 const LOCAL = !window.BUDGET_FIREBASE || (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && /[?&]demo\b/.test(location.search));
 
@@ -705,7 +737,12 @@ function render() {
   document.body.classList.toggle("hide", S.hide);
   const navLbl = S.view === "year" ? S.year : monthName(S.month);
   const atNow = S.view === "year" ? S.year === today().getFullYear() : S.month === thisMonth();
-  const body = !S.loaded ? `<div class="card muted">Loading…</div>` : S.view === "month" ? renderMonth() : S.view === "year" ? renderYear() : renderGoals();
+  const settings = S.loaded && S.view === "settings";
+  const settingsKey = settings ? JSON.stringify([b, look(), myName(), S.hide, S.year]) : "";
+  const previousSettings = $(".settings-page");
+  if (previousSettings && settings && previousSettings.dataset.key === settingsKey) return;
+  tipEl.hidden = true;
+  const body = !S.loaded ? `<div class="card muted">Loading…</div>` : settings ? renderSettings() : S.view === "month" ? renderMonth() : S.view === "year" ? renderYear() : renderGoals();
   const addAction = S.view === "goals" ? "goal" : "quick";
   $("#app").innerHTML = `
     <div class="budget-shell">
@@ -718,7 +755,7 @@ function render() {
           <span style="min-width:0"><span class="t">${esc(b?.name || "Budget")} ▾</span></span></button>
         <button class="gb" data-act="hide" title="${S.hide ? "Show amounts" : "Hide amounts"}">${S.hide ? ICON.eyeoff : ICON.eye}</button>
       </div>
-      ${S.view !== "goals" ? `<div class="nav">
+      ${S.view === "settings" ? '<div class="nav"><h1 class="lbl" style="margin:0">Settings</h1></div>' : S.view !== "goals" ? `<div class="nav">
         <button class="gb" data-act="prev" title="Previous">‹</button>
         <div class="lbl">${esc(navLbl)}</div>
         <button class="gb" data-act="next" title="Next">›</button>
@@ -726,14 +763,17 @@ function render() {
       </div>
       ${atNow ? "" : `<div class="now-actions"><button class="pill" data-act="now">Back to today</button></div>`}` : `<div class="nav"><div class="lbl">Savings goals</div>${S.loaded ? '<button class="btn pri desktop-add" data-act="goal">+ New goal</button>' : ""}</div>`}
     </div></header>
-    <main class="wrap">${body}
-      <p class="muted small foot">${b?.kind === "shared" ? `Shared with ${esc(sharedWith(b))}` : "🔒 Only you can see this budget"}</p>
-    </main>
+    <main class="wrap">${body}</main>
     <nav class="fnav" aria-label="Budget">
       ${navBtn("month", "Home", ICON.home)}${navBtn("year", "Year", ICON.chart)}
-      ${S.loaded ? `<button class="plus" data-act="${addAction}" title="Add">+ Add</button>` : ""}
-      ${navBtn("goals", "Savings", ICON.pig)}<button data-act="settings" title="Settings">${ICON.gear}<span class="lb">Settings</span></button>
+      ${S.loaded && !settings ? `<button class="plus" data-act="${addAction}" title="Add">+ Add</button>` : ""}
+      ${navBtn("goals", "Savings", ICON.pig)}${navBtn("settings", "Settings", ICON.gear)}
     </nav></div>`;
+  if (settings) {
+    const page = $(".settings-page");
+    page.dataset.key = settingsKey;
+    bindSettings(page);
+  }
 }
 const navBtn = (v, t, ic) => `<button class="${S.view === v ? "on" : ""}" ${S.view === v ? 'aria-current="page"' : ""} data-act="tab" data-v="${v}" title="${t}">${ic}<span class="lb">${t}</span></button>`;
 function sharedWith(b) {
@@ -859,6 +899,10 @@ function renderSummary(m, t, items) {
   </div>`;
 }
 
+function flowMoney(value, signed = true) {
+  return `<b class="${value > 0 ? "good" : value < 0 ? "bad" : ""}">${signed && value ? (value > 0 ? "+" : "−") : value < 0 ? "−" : ""}${money(Math.abs(value))}</b>`;
+}
+
 function renderMonthInsights(m, t, b) {
   const prev = totals(mk(mi(m) - 1));
   const pot = t.income + Math.max(0, t.carry);
@@ -874,14 +918,14 @@ function renderMonthInsights(m, t, b) {
 
   // month-end forecast (this month)
   const fc = forecast(m);
-  const fcCard = fc ? `<div class="card"><div class="ttl"><b>🔮 Month-end forecast</b><span class="muted small">estimate</span></div>
+  const fcCard = fc ? `<div class="card balance-flow"><div class="ttl"><b>🔮 Month-end forecast</b><span class="muted small">estimate</span></div>
     <div class="mrow" style="margin-bottom:6px"><span class="k">Likely left on the ${ord(daysIn(m))}</span><span class="v ${fc.end < 0 ? "bad" : "good"}" style="font-size:1.4em">${money(fc.end)}</span></div>
     <div class="fc">
-      <div><span>Coming in</span><b>${money(fc.income + fc.carry)}</b></div>
-      <div><span>Bills${fc.unpaid ? ` <i>(${money(fc.unpaid, { round: true })} still to pay)</i>` : ""}</span><b>− ${money(fc.bills)}</b></div>
-      <div><span>Spent so far</span><b>− ${money(fc.spent)}</b></div>
-      ${fc.saved ? `<div><span>Into savings</span><b>− ${money(fc.saved)}</b></div>` : ""}
-      <div><span>Likely spending in the last ${fc.restDays} day${fc.restDays === 1 ? "" : "s"}</span><b>− ${money(fc.more)}</b></div>
+      <div><span>Coming in</span>${flowMoney(fc.income + fc.carry)}</div>
+      <div><span>Bills${fc.unpaid ? ` <i>(${money(fc.unpaid, { round: true })} still to pay)</i>` : ""}</span>${flowMoney(-fc.bills)}</div>
+      <div><span>Spent so far</span>${flowMoney(-fc.spent)}</div>
+      ${fc.saved ? `<div><span>${fc.saved > 0 ? "Into savings" : "From savings"}</span>${flowMoney(-fc.saved)}</div>` : ""}
+      <div><span>Likely spending in the last ${fc.restDays} day${fc.restDays === 1 ? "" : "s"}</span>${flowMoney(-fc.more)}</div>
     </div>
     <div class="muted small" style="margin-top:8px">${fc.usual != null ? `Based on your usual spending of about ${money(fc.usual, { round: true })} a month.` : `Based on how fast you've spent so far this month.`}</div></div>` : "";
   // insights
@@ -891,8 +935,16 @@ function renderMonthInsights(m, t, b) {
   const limits = limitsFor(m);
   const categoriesCard = `<div class="card"><div class="home-card-title"><h2>Categories and limits</h2>
     <button class="lk" data-act="allcats">View all categories</button></div>
-    ${limits.length ? limits.map(x => `<div class="row2"><span class="mn"><b>${esc(x.c.name)}</b><span>${money(x.used)} of ${money(x.limit)}</span></span>
-      <span class="${x.used > x.limit ? "bad" : "muted"}">${x.used > x.limit ? "Over limit" : ""}</span></div>`).join("") : '<p class="muted small">No spending limits set.</p>'}
+    ${limits.length ? limits.map(x => {
+      const ratio = x.used / x.limit;
+      const tone = ratio >= .95 ? "critical" : ratio >= .8 ? "close" : "";
+      const label = ratio > 1 ? "Over limit" : ratio === 1 ? "At limit" : ratio >= .95 ? "Nearly at limit" : ratio >= .8 ? "Close to limit" : "On track";
+      return `<div class="limit-status ${tone}">
+        <div class="mrow"><b>${esc(x.c.name)}</b><span class="limit-label small">${label}</span></div>
+        <div class="small muted">${money(x.used)} of ${money(x.limit)}</div>
+        <div class="thin" aria-hidden="true"><i style="width:${Math.max(0, Math.min(100, ratio * 100))}%"></i></div>
+      </div>`;
+    }).join("") : '<p class="muted small">No spending limits set.</p>'}
     <button class="btn sm" data-act="limits">Edit spending limits</button></div>`;
   return `<div class="grid two" style="margin-top:14px">
     <div class="grid">${moneyCard}${fcCard}${categoriesCard}</div><div class="grid">${insCard}${b?.kind === "shared" ? `<div class="card"><div class="ttl"><b>👥 Recent activity</b>${(S.activity || []).length ? `<button class="lk" data-act="activity">See all</button>` : ""}</div>
@@ -944,12 +996,12 @@ function renderDetails(m, t, items, l, b) {
       `<div class="item" style="cursor:default">${avatar(u)}<div class="main"><div class="name">${esc(nameOf(u))}</div></div><div class="amt">${money(v)}</div></div>`).join("")}</div></div>`;
   }
   const md = S.months[m] || {};
-  const glance = `<div><div class="sec"><span>${esc(monthName(m, { month: "long" }))} at a glance</span></div><div class="card"><div class="fc" style="font-size:.95em">
-      <div><span>Coming in</span><b class="good">${money(t.income + t.carry)}</b></div>
-      <div><span>Bills (${t.billCount - t.unpaidCount} of ${t.billCount} paid)</span><b>− ${money(t.bills)}</b></div>
-      <div><span>Spending (${spend.length} item${spend.length === 1 ? "" : "s"})</span><b>− ${money(t.spend)}</b></div>
-      ${t.saved ? `<div><span>Into savings</span><b>− ${money(t.saved)}</b></div>` : ""}
-      <div style="border-top:1px solid var(--line);padding-top:6px"><span style="color:var(--text);font-weight:800">Left</span><b class="${t.left < 0 ? "bad" : "good"}">${money(t.left)}</b></div>
+  const glance = `<div><div class="sec"><span>${esc(monthName(m, { month: "long" }))} at a glance</span></div><div class="card balance-flow"><div class="fc" style="font-size:.95em">
+      <div><span>Coming in</span>${flowMoney(t.income + t.carry)}</div>
+      <div><span>Bills (${t.billCount - t.unpaidCount} of ${t.billCount} paid)</span>${flowMoney(-t.bills)}</div>
+      <div><span>Spending (${spend.length} item${spend.length === 1 ? "" : "s"})</span>${flowMoney(-t.spend)}</div>
+      ${t.saved ? `<div><span>${t.saved > 0 ? "Into savings" : "From savings"}</span>${flowMoney(-t.saved)}</div>` : ""}
+      <div style="border-top:1px solid var(--line);padding-top:6px"><span style="color:var(--text);font-weight:800">Left</span>${flowMoney(t.left, false)}</div>
     </div></div></div>`;
   const notes = `<div><div class="sec">Notes for ${esc(monthName(m, { month: "long" }))}</div><div class="card"><textarea id="note" placeholder="Anything to remember this month…">${esc(md.note || "")}</textarea></div></div>`;
   return `<div class="grid two">
@@ -979,16 +1031,19 @@ function renderYear() {
   const pinc = fullPrev ? sum(P, t => t.income) : 0, pout = fullPrev ? sum(P, t => t.out) : 0;
   const past = T.filter(t => t.m <= cur);
   // small bars: income per month (current month highlighted)
-  const mini = (vals, colorOn, key) => { const mx = Math.max(...vals.map(v => v.v), 1);
-    return `<svg viewBox="0 0 240 70" style="width:100%;max-width:260px;height:auto;display:block">${vals.map((v, i) => { const h = Math.max(3, v.v / mx * 52), x = i * 20 + 3;
-      return `<g class="m" data-act="ymonth" data-m="${v.m}" style="cursor:pointer" data-tip="${esc(monthName(v.m) + "\nIncome: " + money(v.v, { raw: true }))}"><rect x="${x}" y="${56 - h}" width="14" height="${h}" rx="5" fill="${v.m === cur ? colorOn : v.m > cur ? "var(--card2)" : `color-mix(in srgb,${colorOn} 28%,var(--card2))`}"/>
-        <text x="${x + 7}" y="68" text-anchor="middle" font-size="8.5" fill="var(--muted)" font-weight="${v.m === cur ? 800 : 600}">${monthName(v.m, { month: "narrow" })}</text></g>`; }).join("")}</svg>`; };
+  const monthControl = t => `class="m year-month" role="button" tabindex="0" aria-label="Open ${esc(monthName(t.m))}" data-act="ymonth" data-m="${t.m}"
+    data-year-tip="${esc(JSON.stringify([t.income, t.out, t.left]))}"`;
+  const mini = () => { const maxIncome = Math.max(...T.map(t => t.income), 1);
+    return `<svg viewBox="0 0 240 70" role="group" aria-label="Monthly income" style="width:100%;max-width:260px;height:auto;display:block">${T.map((t, i) => { const h = Math.max(3, t.income / maxIncome * 52), x = i * 20;
+      return `<g ${monthControl(t)}><rect class="bg" x="${x + 1}" y="1" width="18" height="68" rx="5" fill="transparent"/>
+        <rect class="year-bar" x="${x + 3}" y="${56 - h}" width="14" height="${h}" rx="5" fill="${t.m === cur ? "var(--accent)" : t.m > cur ? "var(--card2)" : "color-mix(in srgb,var(--accent) 28%,var(--card2))"}"/>
+        <text x="${x + 10}" y="68" text-anchor="middle" font-size="8.5" fill="var(--muted)" font-weight="${t.m === cur ? 800 : 600}">${monthName(t.m, { month: "narrow" })}</text></g>`; }).join("")}</svg>`; };
   const W = 720, H = 300, pb = 34, cw = W / 12, bw = cw * .5;
   const max = Math.max(...T.map(t => t.out), 1);
   const bars = T.map((t, i) => { const x = i * cw, ho = (t.out / max) * (H - pb - 16), on = t.m === cur;
-    return `<g class="m" data-act="ymonth" data-m="${t.m}" data-tip="${esc(`${monthName(t.m)}\nIn: ${money(t.income, { raw: true })}\nOut: ${money(t.out, { raw: true })}\nLeft: ${money(t.left, { raw: true })}${t.m > cur ? "\n(planned)" : ""}`)}">
+    return `<g ${monthControl(t)}>
       <rect class="bg" x="${x + 2}" y="0" width="${cw - 4}" height="${H}" rx="10" fill="transparent"/>
-      <rect x="${x + (cw - bw) / 2}" y="${H - pb - ho}" width="${bw}" height="${Math.max(ho, 2)}" rx="10" fill="${on ? "var(--out)" : t.m > cur ? "color-mix(in srgb,var(--out) 22%,var(--card2))" : "color-mix(in srgb,var(--out) 55%,var(--card2))"}"/>
+      <rect class="year-bar" x="${x + (cw - bw) / 2}" y="${H - pb - ho}" width="${bw}" height="${Math.max(ho, 2)}" rx="10" fill="${on ? "var(--out)" : t.m > cur ? "color-mix(in srgb,var(--out) 22%,var(--card2))" : "color-mix(in srgb,var(--out) 55%,var(--card2))"}"/>
       <text x="${x + cw / 2}" y="${H - 10}" text-anchor="middle" font-size="15" fill="${on ? "var(--text)" : "var(--muted)"}" font-weight="${on ? 800 : 600}">${monthName(t.m, { month: "short" })}</text></g>`; }).join("");
   const byCat = {};
   for (const m of ms) for (const i of monthItems(m)) if (!i.skipped && i.type !== "income") byCat[i.category] = r2((byCat[i.category] || 0) + i.amt);
@@ -1001,14 +1056,14 @@ function renderYear() {
     <div class="grid">
       <div class="card"><div class="ttl"><b>Income in ${y}</b>${pinc ? chip(change(inc, pinc), false) : ""}</div>
         <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap"><span class="gaugecard" style="padding:0"><span class="gv" style="font-size:1.7em">${money(inc, { round: true })}</span><br><span class="muted small">${pinc ? `vs ${money(pinc, { round: true })} in ${y - 1}` : `${money(inc / 12, { round: true })} a month on average`}</span></span>
-        ${mini(T.map(t => ({ m: t.m, v: t.income })), "var(--accent)")}</div></div>
+        ${mini()}</div></div>
       <div class="kpis">
         <div class="kpi"><div class="kh"><span>↙️</span>Left over</div><div class="kv ${inc - out - saved < 0 ? "bad" : "good"}">${money(inc - out - saved, { round: true })}</div><div class="ks">after bills, spending & savings</div></div>
         <div class="kpi"><div class="kh"><span>🐷</span>Into savings</div><div class="kv">${money(saved, { round: true })}</div><div class="ks">avg ${money(past.length ? sum(past, t => t.left) / past.length : 0, { round: true })} left a month</div></div>
       </div>
       <div class="card"><div class="ttl"><b>Going out</b>${pout ? chip(change(out, pout), true) : `<span class="muted small">${y}</span>`}</div>
         <div class="gv" style="font-size:1.7em;font-weight:800">${money(out, { round: true })}</div>
-        ${out > 0 ? `<div class="chart" style="margin-top:10px"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Money going out per month">${bars}</svg></div>` : `<p class="muted small" style="margin:8px 0 0">Nothing has gone out in ${y} yet. Once bills and spending are added, each month gets a bar here — hover over one (or tap it) to see its numbers.</p>`}
+        ${out > 0 ? `<div class="chart" style="margin-top:10px"><svg viewBox="0 0 ${W} ${H}" role="group" aria-label="Money going out per month">${bars}</svg></div>` : `<p class="muted small" style="margin:8px 0 0">Nothing has gone out in ${y} yet. Once bills and spending are added, each month gets a bar here.</p>`}
         ${best && best.left > 0 ? `<p class="muted small" style="text-align:center;margin:6px 0 0">Best month so far: <b>${monthName(best.m, { month: "long" })}</b> with ${money(best.left, { round: true })} left. Tap a month to open it.</p>` : ""}
       </div>
     </div>
@@ -1418,21 +1473,22 @@ function openBudgets() {
   });
 }
 
-function openSettings() {
+function renderSettings() {
   const b = B(), l = look(), owner = b?.owner === S.user.uid;
   const opt = (o, v) => Object.entries(o).map(([k, t]) => `<option value="${k}" ${k === v ? "selected" : ""}>${t}</option>`).join("");
-  openSheet(`${head("Settings")}
-    <h4>Your look <span style="text-transform:none;letter-spacing:0;font-weight:600">— only on your login</span></h4>
+  return `<div class="settings-page"><section class="card">
+    <h2>Your look</h2>
     <div class="f"><span>Theme</span><div class="seg" id="sTheme" style="margin:0">${[["auto", "Auto"], ["light", "Light"], ["dark", "Dark"]].map(([k, t]) => `<button type="button" data-v="${k}" class="${l.theme === k ? "on" : ""}">${t}</button>`).join("")}</div></div>
     <div class="f"><span>Colour</span><div class="swatches" id="sAcc">${Object.entries(ACCENTS).map(([k, c]) => `<button type="button" class="sw ${l.accent === k ? "on" : ""}" title="${k}" style="background:${c}" data-v="${k}"></button>`).join("")}</div></div>
     <div class="f"><span>Text size</span><div class="seg" id="sSize" style="margin:0">${[["normal", "Normal"], ["large", "Large"], ["xl", "Extra large"]].map(([k, t]) => `<button type="button" data-v="${k}" class="${l.size === k ? "on" : ""}">${t}</button>`).join("")}</div></div>
     <div class="cols">
-      <label class="f"><span>Open on</span><select id="sStart">${opt({ month: "Overview", year: "Year", goals: "Savings" }, l.start)}</select></label>
+      <label class="f"><span>Open on</span><select id="sStart">${opt({ month: "Home", year: "Year", goals: "Savings" }, l.start)}</select></label>
       <label class="f"><span>Order bills by</span><select id="sSort">${opt({ due: "Due date", unpaid: "Unpaid first", amount: "Amount", name: "Name" }, l.billSort)}</select></label>
     </div>
-    <label class="check"><input type="checkbox" id="sHide" ${l.hideOnStart ? "checked" : ""}> Hide amounts when the app opens (tap 👁 to show)</label>
+    <label class="check"><input type="checkbox" id="sHide" ${l.hideOnStart ? "checked" : ""}> Hide amounts when the app opens (tap 👁 to show)</label></section>
 
-    ${b ? `<h4>This budget</h4>
+    ${b ? `<section class="card"><h2>This budget</h2>
+    <p class="muted small">${b.kind === "shared" ? `Shared with ${esc(sharedWith(b))}` : "Private budget · only you can see it"}</p>
     <div class="cols" style="grid-template-columns:70px 1fr">
       <label class="f"><span>Icon</span><input type="text" id="bE" maxlength="4" value="${esc(b.emoji || "💰")}" style="text-align:center"></label>
       <label class="f"><span>Name</span><input type="text" id="bN" maxlength="40" value="${esc(b.name)}"></label>
@@ -1448,19 +1504,23 @@ function openSettings() {
       <div>${(b.members || []).map(u => `<div class="item" style="cursor:default">${avatar(u)}<div class="main"><div class="name">${esc(b.memberNames?.[u] || "someone")}${u === S.user.uid ? " (you)" : ""}${u === b.owner ? '<span class="tag acc">owner</span>' : ""}</div></div>${owner && u !== S.user.uid ? `<button class="btn sm dang" data-kick="${esc(u)}">Remove</button>` : ""}</div>`).join("")}</div>
       ${owner ? `<div class="box"><label class="f"><span>Add a person — paste their sharing code</span><input type="text" id="pC" placeholder="their code from Settings → Your account" autocomplete="off"></label>
         <label class="f"><span>Their name</span><input type="text" id="pN" maxlength="30" placeholder="e.g. Mum"></label><button class="btn" id="pAdd">Add person</button></div>` : ""}
-      <div class="actions">${owner ? `<button class="btn dang" id="bDel">Delete this budget</button>` : `<button class="btn dang" id="bLeave">Leave this budget</button>`}</div>` : ""}` : ""}
+      <div class="actions">${owner ? `<button class="btn dang" id="bDel">Delete this budget</button>` : `<button class="btn dang" id="bLeave">Leave this budget</button>`}</div>` : ""}</section>` : ""}
 
-    <h4>Your account</h4>
+    <section class="card"><h2>Your account</h2>
     <label class="f"><span>Your name (shown to people you share with)</span><input type="text" id="aN" maxlength="30" value="${esc(myName())}"></label>
     ${LOCAL ? `<p class="muted small">Demo mode: there is no login. Everything is stored only in this browser.</p>` : `
       <div class="f"><span>Your sharing code — give it to someone so they can add you to a shared budget</span><code class="code">${esc(S.user.uid)}</code></div>
       <p class="muted small">Signed in as ${esc(S.user.email)}</p>`}
-    <div class="actions" style="margin-top:0"><button class="btn" id="aSave">Save name</button><button class="btn" id="aCopy" ${LOCAL ? "hidden" : ""}>Copy code</button>${LOCAL ? "" : `<button class="btn dang" id="aOut">Sign out</button>`}</div>
+    <div class="actions" style="margin-top:0"><button class="btn" id="aSave">Save name</button><button class="btn" id="aCopy" ${LOCAL ? "hidden" : ""}>Copy code</button>${LOCAL ? "" : `<button class="btn dang" id="aOut">Sign out</button>`}</div></section>
 
-    <h4>Backup</h4>
+    <section class="card"><h2>Backup</h2>
     <div class="actions" style="margin-top:0"><button class="btn" id="xJ">Download backup</button><button class="btn" id="xC">Export ${S.year} to Excel (CSV)</button><button class="btn" id="xI">Restore backup</button></div>
     <input type="file" id="xF" accept=".json,application/json" hidden>
-    <p class="muted small" style="margin-top:18px">Version ${APP_VERSION}${LOCAL ? " · demo" : ""}</p>`, sh => {
+    <p class="muted small" style="margin-top:18px">Version ${APP_VERSION}${LOCAL ? " · demo" : ""}</p></section></div>`;
+}
+
+function bindSettings(sh) {
+    const b = B();
     const saveLook = patch => { S.profile.look = { ...look(), ...patch }; applyLook(); render(); w(Store.saveProfile({ look: patch })); };
     const segPick = (sel, key) => sh.querySelector(sel).onclick = ev => { const x = ev.target.closest("[data-v]"); if (!x) return;
       sh.querySelectorAll(sel + " [data-v]").forEach(y => y.classList.toggle("on", y === x)); saveLook({ [key]: x.dataset.v }); };
@@ -1508,7 +1568,6 @@ function openSettings() {
     sh.querySelector("#xC").onclick = exportCSV;
     sh.querySelector("#xI").onclick = () => sh.querySelector("#xF").click();
     sh.querySelector("#xF").onchange = importJSON;
-  });
 }
 
 function openCats() {
@@ -1697,7 +1756,6 @@ document.addEventListener("click", ev => {
     quick: openQuick,
     edit: () => openEntry(t.dataset.id),
     hide: () => { S.hide = !S.hide; render(); },
-    settings: openSettings,
     budgets: openBudgets,
     limits: () => { closeSheet(); openLimits(); },
     backfill: () => openBackfill(t.dataset.type || "income", t.dataset.from),
@@ -1727,8 +1785,34 @@ document.addEventListener("click", ev => {
 });
 const tipEl = Object.assign(document.createElement("div"), { className: "tip", hidden: true });
 document.body.append(tipEl);
-document.addEventListener("mouseover", ev => { const el = ev.target.closest && ev.target.closest("[data-tip]"); if (!el) { tipEl.hidden = true; return; } tipEl.textContent = el.dataset.tip; tipEl.hidden = false; });
-document.addEventListener("mousemove", ev => { if (tipEl.hidden) return; tipEl.style.left = Math.max(8, Math.min(innerWidth - tipEl.offsetWidth - 8, ev.clientX + 14)) + "px"; tipEl.style.top = Math.max(8, ev.clientY - tipEl.offsetHeight - 12) + "px"; });
+function showYearTip(bar) {
+  const [income, out, left] = JSON.parse(bar.dataset.yearTip);
+  tipEl.className = "tip year-tip balance-flow";
+  tipEl.innerHTML = `<strong>${esc(monthName(bar.dataset.m))}${bar.dataset.m > thisMonth() ? " · planned" : ""}</strong>
+    <div class="year-tip-row"><span>Income</span>${flowMoney(income)}</div>
+    <div class="year-tip-row"><span>Going out</span>${flowMoney(-out)}</div>
+    <div class="year-tip-row"><span>Left</span>${flowMoney(left, false)}</div>
+    <span class="muted tip-hint">Select to open month details</span>`;
+  tipEl.hidden = false;
+  const rect = bar.getBoundingClientRect();
+  const above = rect.top - tipEl.offsetHeight - 8;
+  const y = above >= 8 ? above : rect.bottom + 8;
+  tipEl.style.left = Math.max(8, Math.min(innerWidth - tipEl.offsetWidth - 8, rect.left + (rect.width - tipEl.offsetWidth) / 2)) + "px";
+  tipEl.style.top = Math.max(8, Math.min(innerHeight - tipEl.offsetHeight - 8, y)) + "px";
+}
+document.addEventListener("mouseover", ev => {
+  const bar = ev.target.closest("[data-year-tip]");
+  if (bar) { if (!bar.contains(ev.relatedTarget)) showYearTip(bar); return; }
+  const el = ev.target.closest("[data-tip]");
+  tipEl.hidden = !el || S.hide;
+  if (tipEl.hidden) return;
+  tipEl.className = "tip";
+  tipEl.textContent = el.dataset.tip;
+});
+document.addEventListener("mousemove", ev => { if (tipEl.hidden || tipEl.classList.contains("year-tip")) return; tipEl.style.left = Math.max(8, Math.min(innerWidth - tipEl.offsetWidth - 8, ev.clientX + 14)) + "px"; tipEl.style.top = Math.max(8, ev.clientY - tipEl.offsetHeight - 12) + "px"; });
+document.addEventListener("focusin", ev => { if (ev.target.matches("[data-year-tip]")) showYearTip(ev.target); });
+document.addEventListener("focusout", ev => { if (ev.target.matches("[data-year-tip]")) tipEl.hidden = true; });
+window.addEventListener("scroll", () => { tipEl.hidden = true; }, { passive:true });
 let noteT;
 document.addEventListener("input", ev => {
   if (ev.target.id !== "note") return;
@@ -1740,7 +1824,14 @@ const _render = render;
 render = function () { const a = document.activeElement; if (a && a.id === "note" && S.view === "month") return; _render(); };
 document.addEventListener("focusout", ev => { if (ev.target.id === "note") setTimeout(_render, 0); });
 document.addEventListener("keydown", ev => {
-  if (ev.key === "Escape" && !$("#scrim").hidden) closeSheet();
+  if (ev.key === "Escape") {
+    tipEl.hidden = true;
+    if (!$("#scrim").hidden) closeSheet();
+  }
+  if ((ev.key === "Enter" || ev.key === " ") && ev.target.matches("[data-year-tip]")) {
+    ev.preventDefault();
+    ev.target.dispatchEvent(new MouseEvent("click", { bubbles:true }));
+  }
   if (ev.key === "Enter" && !$("#scrim").hidden && ev.target.matches(".sheet input:not([type=checkbox])")) { const s = $("#scrim").querySelector(".actions .btn.pri"); if (s) { ev.preventDefault(); s.click(); } }
 });
 setInterval(() => { if (S.ready) render(); }, 60 * 60 * 1000);
