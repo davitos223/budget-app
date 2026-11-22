@@ -380,8 +380,9 @@ body{padding-bottom:calc(120px + env(safe-area-inset-bottom))}
 .row2 .mn .atx{font-size:.95em;color:var(--text);font-weight:600;line-height:1.4}
 .row2 .mn .atx b{display:inline;font-weight:800}
 </style>
-<script src="config.js?v=20261122m"></script>
-<script type="module" src="cloud.js?v=20261122m"></script>
+<script src="config.js?v=20261122o"></script>
+<script type="module" src="cloud.js?v=20261122o"></script>
+<script src="calculations.js?v=20261122o"></script>
 </head>
 <body>
 <div id="app"></div>
@@ -390,7 +391,7 @@ body{padding-bottom:calc(120px + env(safe-area-inset-bottom))}
 
 <script>
 "use strict";
-const APP_VERSION = "20261122m";
+const APP_VERSION = "20261122o";
 // demo mode: no Firebase config, or ?demo on a local test server (never touches the real account)
 const LOCAL = !window.BUDGET_FIREBASE || (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && /[?&]demo\b/.test(location.search));
 
@@ -398,30 +399,12 @@ const LOCAL = !window.BUDGET_FIREBASE || (/^(localhost|127\.0\.0\.1)$/.test(loca
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const rid = () => Math.random().toString(36).slice(2, 12);
-const pad = n => String(n).padStart(2, "0");
 let NOW = null;   // tests only: a fixed "today" (e.g. "2026-11-22"); null = the real date
 const today = () => NOW ? new Date(NOW + "T12:00:00") : new Date();
 const thisMonth = () => { const d = today(); return d.getFullYear() + "-" + pad(d.getMonth() + 1); };
 const isoDay = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
-const mi = m => { const [y, mo] = m.split("-").map(Number); return y * 12 + mo - 1; };
-const mk = i => Math.floor(i / 12) + "-" + pad(i % 12 + 1);
-const daysIn = m => { const [y, mo] = m.split("-").map(Number); return new Date(y, mo, 0).getDate(); };
 const monthName = (m, opt = { month: "long", year: "numeric" }) => { const [y, mo] = m.split("-").map(Number); return new Date(y, mo - 1, 1).toLocaleDateString("en-GB", opt); };
 const ord = n => n + (n % 100 >= 11 && n % 100 <= 13 ? "th" : ({ 1: "st", 2: "nd", 3: "rd" }[n % 10] || "th"));
-function num(v) {
-  if (typeof v === "number") return isFinite(v) ? Math.round(v * 100) / 100 : 0;
-  let s = String(v ?? "").replace(/[\s €$£]/g, "");
-  // the budget's number style decides what a lone "," or "." means: "dot" = 1.234,56 (default), "comma" = 1,234.56
-  const style = (typeof B === "function" && B()?.numStyle) || "dot";
-  const group = style === "comma" ? "," : ".", groupsOnly = style === "comma" ? /^-?\d{1,3}(,\d{3})+$/ : /^-?\d{1,3}(\.\d{3})+$/;
-  if (s.includes(",") && s.includes(".")) s = s.lastIndexOf(",") > s.lastIndexOf(".") ? s.replace(/\./g, "").replace(",", ".") : s.replace(/,/g, "");
-  else if (groupsOnly.test(s)) s = s.split(group).join("");   // 1.000 / 12.500 in dot style
-  else if (s.includes(",") || s.includes(".")) { const parts = s.split(/[.,]/); const last = parts.pop(); s = parts.join("") + "." + last; }   // anything else: the last mark is the decimal point
-  const n = parseFloat(s); return isFinite(n) ? Math.round(n * 100) / 100 : 0;
-}
-const cents = v => Math.round(num(v) * 100);
-const r2 = v => Math.round(v * 100) / 100;                                     // tidy a euro value to whole cents
-const sum = (a, f = x => x) => a.reduce((s, x) => s + Math.round(f(x) * 100), 0) / 100;   // exact: adds whole cents
 const ICON = {
   gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
   eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
@@ -437,7 +420,6 @@ const ICON = {
 const ACCENTS = { indigo: "#5b5fd6", teal: "#0d9488", blue: "#2563eb", green: "#16a34a", purple: "#8b5cf6", rose: "#e11d48", orange: "#ea580c", graphite: "#475569" };
 const CURRENCIES = ["EUR", "USD", "GBP", "CHF", "SEK", "NOK", "DKK", "PLN", "CZK", "HUF", "RON", "BAM", "RSD", "CAD", "AUD"];
 const NUMSTYLES = { dot: ["de-DE", "1.234,56"], comma: ["en-GB", "1,234.56"], space: ["fr-FR", "1 234,56"] };
-const REPEATS = { once: ["Just once", 0], monthly: ["Every month", 1], bimonthly: ["Every 2 months", 2], quarterly: ["Every 3 months", 3], half: ["Every 6 months", 6], yearly: ["Every year", 12] };
 const PALETTE = ["#6366f1", "#14b8a6", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#0ea5e9", "#f97316", "#22c55e", "#84cc16", "#06b6d4", "#a855f7", "#64748b", "#d946ef"];
 const DEFAULT_CATS = [
   ["in", "💼", "Salary"], ["in", "🏖️", "Pension"], ["in", "🎁", "Gifts & extra"], ["in", "📥", "Other income"],
@@ -490,6 +472,10 @@ const B = () => S.budgets.find(b => b.id === S.bid);
 const look = () => ({ theme: "auto", accent: "indigo", size: "normal", start: "month", hideOnStart: false, billSort: "due", ...(S.profile.look || {}) });
 const cats = () => (B()?.categories?.length ? B().categories : DEFAULT_CATS);
 const cat = id => cats().find(c => c.id === id) || { id, emoji: "📦", name: "Other", color: "#64748b" };
+const {
+  num, r2, sum, monthItems, goalMoves, firstMonth, totals, carryIn,
+  limitsFor, safeToSpend, outByCat, forecast, billsPlan, goalSaved, goalMonths, clearCarryCache,
+} = makeBudgetCalculations({ state: S, budget: B, category: cat, today, thisMonth });
 const w = p => { (p && p.catch ? p : Promise.resolve()).catch(e => { console.error(e); toast("Couldn't save: " + (e.code || e.message || e)); }); return p; };
 const myName = () => S.profile.name || (S.user?.email || "").split("@")[0] || "Me";
 const whoName = uid => uid === S.user?.uid ? "you" : (B()?.memberNames?.[uid] || "someone");
@@ -512,93 +498,6 @@ function money(n, opt = {}) {
 }
 
 /* ---------- budget maths ---------- */
-function occurs(e, m) {
-  if (!e.start) return false;
-  const a = mi(e.start), x = mi(m);
-  if (x < a || (e.until && x > mi(e.until))) return false;
-  const step = (REPEATS[e.repeat] || REPEATS.once)[1];
-  return step ? (x - a) % step === 0 : x === a;
-}
-function autoPaid(e, m) {
-  const cur = thisMonth();
-  if (m < cur) return true;
-  if (m > cur) return false;
-  return today().getDate() >= (e.due || 1);
-}
-function monthItems(m) {
-  const md = S.months[m] || {};
-  return S.entries.filter(e => occurs(e, m)).map(e => {
-    const over = md.amounts?.[e.id];
-    const explicit = md.paid?.[e.id];
-    return { ...e, base: num(e.amount), amt: over != null ? num(over) : num(e.amount), changed: over != null,
-      skipped: !!md.skip?.[e.id], paid: e.type === "bill" ? (explicit != null ? !!explicit : (e.auto ? autoPaid(e, m) : false)) : true };
-  });
-}
-function goalMoves(m) { const out = []; for (const g of S.goals) for (const d of (g.moves || [])) if ((d.d || "").startsWith(m)) out.push({ ...d, goal: g }); return out; }
-function firstMonth() {
-  let f = null;
-  for (const e of S.entries) if (e.start && (!f || e.start < f)) f = e.start;
-  for (const g of S.goals) for (const d of (g.moves || [])) { const m = (d.d || "").slice(0, 7); if (m && (!f || m < f)) f = m; }
-  return f;
-}
-const carryCache = new Map();
-function totals(m) {
-  const items = monthItems(m).filter(i => !i.skipped);
-  const income = sum(items.filter(i => i.type === "income"), i => i.amt);
-  const billsAll = items.filter(i => i.type === "bill");
-  const bills = sum(billsAll, i => i.amt);
-  const unpaidList = billsAll.filter(i => !i.paid);
-  const unpaid = sum(unpaidList, i => i.amt);
-  const spend = sum(items.filter(i => i.type === "spend"), i => i.amt);
-  const saved = sum(goalMoves(m), d => num(d.a));
-  const carry = B()?.carry ? carryIn(m) : 0;
-  const afterBills = (cents(income) + cents(carry) - cents(bills)) / 100;
-  const left = (cents(afterBills) - cents(spend) - cents(saved)) / 100;
-  return { income, bills, unpaid, unpaidCount: unpaidList.length, billCount: billsAll.length, spend, saved, carry, afterBills, left, out: (cents(bills) + cents(spend)) / 100 };
-}
-function carryIn(m) {
-  const key = m + "|" + S.dataStamp;
-  if (carryCache.has(key)) return carryCache.get(key);
-  const f = firstMonth();
-  let c = 0;
-  if (f && f < m) {
-    const start = Math.max(mi(f), mi(m) - 240);
-    for (let i = start; i < mi(m); i++) {
-      const items = monthItems(mk(i)).filter(x => !x.skipped);
-      c += cents(sum(items, x => x.type === "income" ? x.amt : -x.amt)) - cents(sum(goalMoves(mk(i)), d => num(d.a)));
-    }
-  }
-  carryCache.set(key, c / 100);
-  return c / 100;
-}
-// spending limits per category: { catId: { limit, used, paidPart } }
-function limitsFor(m) {
-  const L = B()?.limits || {};
-  const items = monthItems(m).filter(i => !i.skipped && i.type !== "income");
-  return Object.entries(L).filter(([, v]) => num(v) > 0).map(([id, v]) => {
-    const its = items.filter(i => i.category === id);
-    const used = sum(its, i => i.amt), done = sum(its.filter(i => i.paid), i => i.amt);
-    return { id, c: cat(id), limit: num(v), used, done };
-  }).sort((a, b) => b.used / b.limit - a.used / a.limit);
-}
-// what can still be spent per day for the rest of this month (null for other months)
-function safeToSpend(m) {
-  if (m !== thisMonth()) return null;
-  const days = daysIn(m) - today().getDate() + 1;
-  return { perDay: r2(Math.max(0, totals(m).left) / days), days };
-}
-// bills + spending per category in a month (skipped items left out)
-function outByCat(m) { const o = {}; for (const i of monthItems(m)) if (!i.skipped && i.type !== "income") o[i.category] = r2((o[i.category] || 0) + i.amt); return o; }
-// month-end forecast (this month only): what is likely left once the usual spending for the rest of the month happens.
-// "usual" = average spending of the last 3 months that had any; with no history, this month's daily pace is used.
-function forecast(m) {
-  if (m !== thisMonth()) return null;
-  const t = totals(m), day = today().getDate(), restDays = daysIn(m) - day;
-  const prev = [1, 2, 3].map(k => totals(mk(mi(m) - k)).spend).filter(v => v > 0);
-  const usual = prev.length ? r2(sum(prev) / prev.length) : null;
-  const more = r2(Math.max(0, usual != null ? usual - t.spend : t.spend / day * restDays));
-  return { income: t.income, carry: t.carry, bills: t.bills, unpaid: t.unpaid, spent: t.spend, saved: t.saved, more, usual, restDays, end: r2(t.left - more) };
-}
 // short, plain-language observations from the budget's own numbers (max 4)
 function insights(m) {
   const out = [], cur = outByCat(m), pm = mk(mi(m) - 1), prev = outByCat(pm), t = totals(m), p = totals(pm);
@@ -628,21 +527,6 @@ function insights(m) {
     : { key: "fc", icon: "⚠️", tone: "bad", html: `At this rate ${esc(monthName(m, { month: "long" }))} ends <b>${R(fc.end)} short</b>. Holding back on spending would close the gap.` });
   return out.slice(0, 5);
 }
-// every bill in a calendar year: how often, which months, and its total (one-month changes and skips included)
-function billsPlan(year) {
-  const map = {};
-  for (let i = 1; i <= 12; i++) {
-    const m = year + "-" + pad(i);
-    for (const it of monthItems(m)) if (it.type === "bill" && !it.skipped) {
-      const o = (map[it.id] ||= { id: it.id, name: it.name, category: it.category, repeat: it.repeat || "once", count: 0, total: 0, months: [] });
-      o.count++; o.total = r2(o.total + it.amt); o.months.push(i);
-    }
-  }
-  const items = Object.values(map).sort((a, z) => z.total - a.total);
-  return { items, total: sum(items, x => x.total) };
-}
-// how much to put aside each month from `from` to `by` (both included) to reach `total` — rounded UP to the cent so it's enough
-function perMonth(total, from, by) { const n = mi(by) - mi(from) + 1; return n > 0 ? Math.ceil(Math.round(total * 100) / n) / 100 : null; }
 // ---------- activity history ----------
 // record one change: k = kind, n = name, a = amount, t = entry type, m = month, x = extra words
 function logAct(k, o = {}) {
@@ -773,7 +657,7 @@ function itemRow(i, m) {
   const c = cat(i.category);
   const late = i.type === "bill" && !i.paid && !i.skipped && ((m === thisMonth() && i.due && i.due < today().getDate()) || m < thisMonth());
   const meta = [];
-  if (i.due) meta.push(i.type === "bill" ? "due " + ord(i.due) : i.repeat && i.repeat !== "once" ? "on the " + ord(i.due)
+  if (i.due) meta.push(i.type === "bill" ? "due " + ord(i.due) : i.repeat && i.repeat !== "once" && !i.date ? "on the " + ord(i.due)
     : new Date(+m.slice(0, 4), +m.slice(5) - 1, Math.min(i.due, daysIn(m))).toLocaleDateString("en-GB", { day: "numeric", month: "short" }));
   if (i.repeat && i.repeat !== "once") meta.push(REPEATS[i.repeat][0].toLowerCase());
   if (i.until) meta.push("until " + monthName(i.until, { month: "short", year: "numeric" }));
@@ -785,7 +669,7 @@ function itemRow(i, m) {
   if (late) tags.push('<span class="tag bad">overdue</span>');
   else if (i.type === "bill" && !i.paid && !i.skipped && m === thisMonth() && i.due && i.due - today().getDate() <= 5) tags.push('<span class="tag warn">soon</span>');
   return `<div class="item ${i.skipped ? "skipped" : ""} ${i.type === "bill" && i.paid ? "paid" : ""}" data-act="edit" data-id="${esc(i.id)}">
-    ${i.type === "bill" ? `<button class="chk ${i.paid ? "on" : ""} ${late ? "late" : ""}" data-act="pay" data-id="${esc(i.id)}" title="${i.paid ? "Paid — tap to undo" : "Mark as paid"}">${ICON.tick}</button>` : ""}
+    ${i.type === "bill" ? `<button class="chk ${i.paid ? "on" : ""} ${late ? "late" : ""}" data-act="pay" data-id="${esc(i.paymentKey)}" title="${i.paid ? "Paid — tap to undo" : "Mark as paid"}">${ICON.tick}</button>` : ""}
     <div class="emo" style="background:${c.color}1f">${esc(c.emoji)}</div>
     <div class="main"><div class="name">${esc(i.name || c.name)}${tags.join("")}</div><div class="meta">${esc(meta.join(" · ") || c.name)}</div></div>
     <div class="amt">${money(i.amt)}${i.changed && !i.skipped ? `<span class="was">${money(i.base)}</span>` : ""}</div>
@@ -1047,9 +931,6 @@ function renderYear() {
   </div>`;
 }
 
-function goalSaved(g) { return sum(g.moves || [], d => num(d.a)); }
-// net money into a goal per month, oldest first: [{ m, v }]
-function goalMonths(g, n = 6) { const end = mi(thisMonth()); return Array.from({ length: n }, (_, k) => { const m = mk(end - n + 1 + k); return { m, v: sum((g.moves || []).filter(d => (d.d || "").startsWith(m)), d => num(d.a)) }; }); }
 function renderGoals() {
   const gs = [...S.goals].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
   const total = sum(gs, goalSaved), target = sum(gs, g => num(g.target));
@@ -1105,7 +986,9 @@ function openBillPlan() {
       if (!picked) picked = new Set(plan.items.map(x => x.id));
       const total = sum(list.filter(x => picked.has(x.id)), x => x.total);
       sh.querySelector("#bpL").innerHTML = list.length ? `<div class="f"><span>${list.length} bill${list.length > 1 ? "s" : ""} in ${year} — untick any you don't want to save for</span>${list.map(x => { const c = cat(x.category);
-        const when = x.repeat === "monthly" ? `every month · ${money(x.total / x.count, { round: true, raw: true })}` : `${x.months.map(n => new Date(2000, n - 1, 1).toLocaleDateString("en-GB", { month: "short" })).join(", ")}`;
+        const when = x.repeat === "monthly" ? `every month · ${money(x.total / x.count, { round: true, raw: true })}`
+          : repeatDays(x.repeat) ? `${REPEATS[x.repeat][0].toLowerCase()} · ${x.count} scheduled`
+          : x.months.map(n => new Date(2000, n - 1, 1).toLocaleDateString("en-GB", { month: "short" })).join(", ");
         return `<label class="check" style="margin:0;padding:9px 0;border-top:1px solid var(--line)"><input type="checkbox" data-bp="${esc(x.id)}" ${picked.has(x.id) ? "checked" : ""}>
           <span style="flex:1;min-width:0"><b>${esc(c.emoji)} ${esc(x.name)}</b><br><span class="muted small">${esc(when)}</span></span><b>${money(x.total, { round: true })}</b></label>`; }).join("")}</div>`
         : `<p class="muted">${only ? "No bills that come less often than monthly in " + year + "." : "No bills in " + year + " yet. Add your regular bills first — repeating ones count automatically."}</p>`;
@@ -1206,6 +1089,7 @@ function openEntry(id, type) {
       <label class="f"><span>Note</span><input type="text" id="fNote" maxlength="120" placeholder="e.g. account number, who pays it" value="${esc(f.note || "")}"></label>
     </div>
     ${repeating ? `<h4>Just for ${esc(monthName(m))}</h4><div class="box">
+      <p class="muted small" id="fMonthHint" hidden>Changes here apply to every occurrence in this month.</p>
       <label class="f" style="margin-bottom:8px"><span>Different amount this month only</span><input type="text" id="fOver" inputmode="decimal" placeholder="usual: ${esc(money(num(e.amount), { raw: true }))}" value="${md.amounts?.[e.id] != null ? esc(String(md.amounts[e.id]).replace(".", ",")) : ""}"></label>
       <label class="check" style="margin:0"><input type="checkbox" id="fSkip" ${md.skip?.[e.id] ? "checked" : ""}> Skip it this month</label></div>` : ""}
     <div class="actions"><button class="btn pri" id="save">Save</button></div>
@@ -1218,18 +1102,25 @@ function openEntry(id, type) {
       const box = sh.querySelector("#fCats"), keep = box.scrollLeft;
       box.innerHTML = catChips(kind, f.category); box.scrollLeft = keep;
       sh.querySelector("#autoRow").style.display = f.type === "bill" ? "" : "none";
-      const rep = sh.querySelector("#fRep").value !== "once";
+      const frequency = sh.querySelector("#fRep").value;
+      const rep = frequency !== "once", weekly = !!repeatDays(frequency);
+      const day = sh.querySelector("#fSD");
+      day.options[0].disabled = weekly;
+      day.required = weekly;
+      const monthHint = sh.querySelector("#fMonthHint");
+      if (monthHint) monthHint.hidden = !weekly;
       sh.querySelector("#untilF").style.display = rep ? "" : "none";
-      sh.querySelector("#fStartL").textContent = rep ? "Starting from" : (f.type === "bill" ? "Due date" : "Date");
-      sh.querySelector("#fSDL").textContent = rep ? (f.type === "bill" ? "Due on day" : f.type === "income" ? "Paid on day" : "On day") : "Day";
-      sh.querySelector("#fDayHint").textContent = rep ? "The day is optional. It repeats on that day each time." : "The day is optional. Leave it on “—” to just use the month.";
+      sh.querySelector("#fStartL").textContent = weekly ? "First occurrence" : rep ? "Starting from" : (f.type === "bill" ? "Due date" : "Date");
+      sh.querySelector("#fSDL").textContent = rep && !weekly ? (f.type === "bill" ? "Due on day" : f.type === "income" ? "Paid on day" : "On day") : "Day";
+      sh.querySelector("#fDayHint").textContent = weekly ? "Choose the first date. Each occurrence uses the amount above."
+        : rep ? "The day is optional. It repeats on that day each time." : "The day is optional. Leave it on “—” to just use the month.";
     };
     sync();
     const sel = sh.querySelector("#fCats .on"); if (sel) sel.scrollIntoView({ inline: "center", block: "nearest" });
     sh.querySelector("#tsel").onclick = ev => { const b = ev.target.closest("button"); if (!b) return; f.type = b.dataset.t;
       if (!e) sh.querySelector("#fRep").value = f.type === "spend" ? "once" : "monthly"; sync(); };
     sh.querySelector("#fRep").onchange = sync;
-    sh.querySelector("#fSM").onchange = sh.querySelector("#fSY").onchange = () => fixDays(sh, "fS");
+    sh.querySelector("#fSM").onchange = sh.querySelector("#fSY").onchange = () => { fixDays(sh, "fS"); sync(); };
     sh.querySelector("#moreBtn").onclick = () => { const mb = sh.querySelector("#moreBox"); mb.hidden = !mb.hidden; sh.querySelector("#moreBtn").textContent = mb.hidden ? "+ More options" : "− Fewer options"; };
     sh.querySelector("#fCats").onclick = ev => { const b = ev.target.closest("[data-cat]"); if (!b) return; f.category = b.dataset.cat; sync(); };
     sh.querySelector("#save").onclick = () => {
@@ -1240,6 +1131,7 @@ function openEntry(id, type) {
       const until = repeat === "once" ? null : readMonthSel(sh, "fU");
       if (until && until < start) { toast("The last month is before the start"); return; }
       const due = parseInt(sh.querySelector("#fSD").value) || null;
+      if (repeatDays(repeat) && !due) { toast("Choose the first day"); sh.querySelector("#fSD").focus(); return; }
       const data = { type: f.type, name: sh.querySelector("#fName").value.trim() || cat(f.category).name, amount, category: f.category || null,
         repeat, start, until, due, auto: f.type === "bill" && sh.querySelector("#fAuto").checked, note: sh.querySelector("#fNote").value.trim(),
         by: e?.by || S.user.uid, createdAt: e?.createdAt || Date.now(), updatedAt: Date.now() };
@@ -1318,8 +1210,6 @@ function fixDays(sh, id) {   // keep the day list right for the chosen month (28
 }
 
 // earliest start on or after `from` that keeps the item's rhythm (a quarterly bill stays on its quarters)
-function backfillStart(e, from) { const step = REPEATS[e.repeat]?.[1] || 1; return mk(mi(e.start) - Math.floor((mi(e.start) - mi(from)) / step) * step); }
-// Fill in earlier months: move the start of repeating income/bills back so past months include them
 function openBackfill(type = "income", from) {
   let kind = type;
   const fromDefault = from || mk(mi(thisMonth()) - 6);
@@ -1334,9 +1224,9 @@ function openBackfill(type = "income", from) {
       const list = S.entries.filter(e => e.type === kind && e.repeat && e.repeat !== "once" && e.start > f && (!e.until || e.until >= f))
         .sort((a, b) => num(b.amount) - num(a.amount));
       sh.querySelector("#bkL").innerHTML = list.length ? `<div class="f"><span>${kind === "income" ? "Your income" : "Your bills"} that start after ${esc(monthName(f))}</span>${list.map(e => {
-        const ns = backfillStart(e, f), c = cat(e.category);
-        return `<label class="check" style="margin:0;padding:9px 0;border-top:1px solid var(--line)"><input type="checkbox" data-bk="${esc(e.id)}" data-ns="${ns}" checked>
-          <span style="flex:1"><b>${esc(c.emoji)} ${esc(e.name)}</b> · ${money(num(e.amount))}<br><span class="muted small">${esc(REPEATS[e.repeat][0].toLowerCase())} · now from ${esc(monthName(e.start, { month: "short", year: "numeric" }))} → from ${esc(monthName(ns, { month: "short", year: "numeric" }))}</span></span></label>`; }).join("")}</div>
+        const { start } = backfillSchedule(e, f), c = cat(e.category);
+        return `<label class="check" style="margin:0;padding:9px 0;border-top:1px solid var(--line)"><input type="checkbox" data-bk="${esc(e.id)}" checked>
+          <span style="flex:1"><b>${esc(c.emoji)} ${esc(e.name)}</b> · ${money(num(e.amount))}<br><span class="muted small">${esc(REPEATS[e.repeat][0].toLowerCase())} · now from ${esc(monthName(e.start, { month: "short", year: "numeric" }))} → from ${esc(monthName(start, { month: "short", year: "numeric" }))}</span></span></label>`; }).join("")}</div>
         ${kind === "bill" ? `<p class="muted small">Bills in months before this one are ticked as paid.</p>` : ""}`
         : `<p class="muted">Nothing to fill in — all your repeating ${kind === "income" ? "income" : "bills"} already ${kind === "income" ? "counts" : "count"} from ${esc(monthName(f))} or earlier.</p>`;
       sh.querySelector("#bkS").disabled = !list.length;
@@ -1350,11 +1240,17 @@ function openBackfill(type = "income", from) {
       const cur = thisMonth();
       for (const box of picked) {
         const e = S.entries.find(x => x.id === box.dataset.bk); if (!e) continue;
-        const ns = box.dataset.ns, oldStart = e.start;
-        w(Store.saveItem(S.bid, "entries", e.id, { ...strip(e), start: ns, updatedAt: Date.now() }).done);
+        const updated = { ...e, ...backfillSchedule(e, readMonthSel(sh, "bkF")), updatedAt: Date.now() };
+        w(Store.saveItem(S.bid, "entries", e.id, strip(updated)).done);
         if (e.type === "bill" && !e.auto) {
-          const step = REPEATS[e.repeat][1];
-          for (let i = mi(ns); i < mi(oldStart) && mk(i) < cur; i += step) w(Store.setMonth(S.bid, mk(i), { paid: { [e.id]: true } }));
+          const end = Math.min(mi(e.start), mi(cur) - 1);
+          for (let i = mi(updated.start); i <= end; i++) {
+            const month = mk(i);
+            const existing = new Set(scheduledItems(e, month).map(item => item.paymentKey));
+            const added = scheduledItems(updated, month).filter(item => !existing.has(item.paymentKey));
+            const paid = Object.fromEntries(added.map(item => [item.paymentKey, true]));
+            if (Object.keys(paid).length) w(Store.setMonth(S.bid, month, { paid }));
+          }
         }
       }
       logAct("backfill", { m: readMonthSel(sh, "bkF"), x: `${picked.length} ${kind === "income" ? "income" : "bill"}${picked.length > 1 && kind !== "income" ? "s" : ""}` });
@@ -1593,10 +1489,10 @@ async function importJSON(ev) {
 function selectBudget(id) {
   if (S.bid === id && unsubBudget) return;
   unsubBudget && unsubBudget();
-  S.bid = id; S.entries = []; S.months = {}; S.goals = []; S.loaded = false; S.dataStamp = 0; carryCache.clear();
+  S.bid = id; S.entries = []; S.months = {}; S.goals = []; S.loaded = false; S.dataStamp = 0; clearCarryCache();
   try { localStorage.setItem("budget.last." + S.user.uid, id); } catch {}
   let got = 0;
-  const mark = () => { S.dataStamp++; carryCache.clear(); if (++got >= 3) S.loaded = true; render(); };
+  const mark = () => { S.dataStamp++; clearCarryCache(); if (++got >= 3) S.loaded = true; render(); };
   // a brand-new budget may not be on the server yet, so the rules refuse at first: try again a few times
   let tries = 0, stopped = false;
   const watch = () => {
@@ -1692,8 +1588,8 @@ document.addEventListener("click", ev => {
   const a = t.dataset.act;
   if (a === "pay") {
     ev.stopPropagation();
-    const it = monthItems(S.month).find(i => i.id === t.dataset.id); if (!it) return;
-    w(Store.setMonth(S.bid, S.month, { paid: { [it.id]: !it.paid } }));
+    const it = monthItems(S.month).find(i => i.paymentKey === t.dataset.id); if (!it) return;
+    w(Store.setMonth(S.bid, S.month, { paid: { [it.paymentKey]: !it.paid } }));
     logAct(it.paid ? "unpay" : "pay", { n: it.name, a: it.paid ? null : it.amt, m: S.month });
     if (!it.paid) toast(`${it.name} paid ✓`);
     return;
@@ -1756,7 +1652,7 @@ else {
   });
   window.addEventListener("cloud-failed", () => { $("#app").innerHTML = `<div class="loginbg"><div class="login"><h2>Can't reach the budget server</h2><p class="muted">Check the internet connection and try again.</p><button class="btn pri" onclick="location.reload()">Try again</button></div></div>`; });
 }
-if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "127.0.0.1" || location.hostname === "localhost")) navigator.serviceWorker.register("sw.js").catch(() => {});
 </script>
 </body>
 </html>

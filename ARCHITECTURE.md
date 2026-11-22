@@ -6,7 +6,8 @@ How Budget is put together, what the numbers mean, and what must keep working. W
 
 | Part | Where | What it does |
 |---|---|---|
-| App | `docs/index.html` | The whole app in one page: screens, calculations, forms. No build step. |
+| App | `docs/index.html` | Screens and forms in one page. No build step. |
+| Calculations | `docs/calculations.js` | Shared money, recurrence and date logic used by the screens. |
 | Sync | `docs/cloud.js` | Firebase sign-in and live sync with an offline cache. Exposes `window.Cloud`. |
 | Config | `docs/config.js` | Which Firebase project to use (`null` = demo mode). |
 | Offline | `docs/sw.js` | Service worker: newest version first, saved copy when offline or slow. |
@@ -78,7 +79,7 @@ Checked from outside on 2026-11-22: reads without a login give `PERMISSION_DENIE
 
 ## Tests
 
-- `node tools/test.mjs`: **84 checks** of the money maths on a demo copy, against numbers worked out by hand. They cover parsing amounts, every repeat rule across year ends, one household's month in full, autopay timing, one-month changes and skips, safe-to-spend at month ends, February and leap years, year totals, carry-over, limits, *Fill in earlier months*, formatting, forecast, insights, the bills plan, activity text and recording, and backup → restore giving identical totals. **Run it before every release.**
+- `node tools/test.mjs`: browser checks on a demo copy. They cover calculations, recurrence, per-date bill ticks, offline updates, and backup and restore. **Run it before every release.**
 - `node tools/screenshots.mjs`: remakes the README pictures from invented demo data.
 - Still to do: automated tests of `firestore.rules` on the Firebase emulator (needs Java 21).
 

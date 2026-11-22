@@ -40,7 +40,7 @@ Enter your income and bills once, tick them off as you pay, and always know what
 ## Features
 
 - **Left after bills, at a glance.** One big number, plus income, bills, spending, savings and what's left after everything.
-- **Enter bills once.** Choose how often each one comes (every month, every 2, 3 or 6 months, every year, or just once), and optionally when it ends. It appears in every month on its own.
+- **Set up recurring bills, income and spending.** Choose every week, every 2 weeks, every month, every 2, 3 or 6 months, or every year. Weekly and every-two-weeks items use a first date and appear on each scheduled day. You can set a last month.
 - **Tick bills off.** Direct debits (*Autopay*) tick themselves on their due day.
 - **Upcoming payments** show "today", "in 2 days" or "3 days late", with overdue and due-soon warnings.
 - **Insights** in plain words from your own numbers, led by where the month is heading ("You're on track to finish November with €2.052 left"), then things like "Groceries: €89 less than last month", "Everything going out is down 6%", "You're at 92% of your Eating out limit".
@@ -48,7 +48,7 @@ Enter your income and bills once, tick them off as you pay, and always know what
 - **Calendar** (in Details): every bill, payday, purchase and savings move on its day. Overdue bills show in red; tap a day to see what's on it.
 - **Plan for next year's bills:** adds up every bill for next year (which months the irregular ones fall in, too) and tells you how much to put aside each month to have it all by a date you pick — or what they cost spread over the year. One tap turns it into a savings goal like "Bills 2027".
 - **Activity history:** every change is recorded with who did it and when ("Sam added spending Weekly shop €128,40", "Mum ticked Rent as paid"). Shared budgets show the latest on the Summary; Settings → *Activity history* has everything. Nobody can edit or delete it.
-- **Optional dates:** give anything a day as well as a month (a due day, a pay day or the date of a purchase), or just pick the month. Day, month and year are dropdowns, so there's nothing to type.
+- **Dates:** choose a day, month and year from dropdowns. A day is required for weekly and every-two-weeks items. Other items can use just the month.
 - **Fill in earlier months:** started mid-year? One tap counts your current income (and bills) in the months before, so past months and the Year view are right. Past bills are ticked as paid.
 - **Just this month:** change a bill's amount or skip it for one month without touching the others.
 - **Spending limits** for each category, e.g. "€194 left of €600", with "You're doing great 👍", "Getting close" or "Over by …".
@@ -167,7 +167,8 @@ flowchart LR
   R["firestore.rules"] -. "who may read/write" .-> F
 ```
 
-- `docs/index.html`: the whole app (one page, no build step).
+- `docs/index.html`: app screens and forms (one page, no build step).
+- `docs/calculations.js`: shared budget calculations, including recurring bills, monthly totals, forecasts and savings.
 - `docs/cloud.js`: sign-in and sync through Firebase, with an offline cache.
 - `docs/config.js`: which Firebase project to use (set it to `null` for demo mode, where data stays in the browser).
 - `docs/sw.js`: service worker. It always tries the newest version first and falls back to the saved copy when offline.
@@ -178,8 +179,8 @@ Data layout: `budgets/{id}` (name, kind, owner, members, currency, categories, l
 ## For developers
 
 - **Run locally:** `py -3.12 -m http.server 5174 --bind 127.0.0.1 --directory docs`, then open <http://localhost:5174>. This uses the real project, so add **`?demo`** (<http://localhost:5174/?demo>) for a demo mode that never touches it. Demo mode only works on localhost.
-- **Tests:** `node tools/test.mjs` runs 84 checks of the money maths on a demo copy (never the real database). Run it before every release.
+- **Tests:** `node tools/test.mjs` runs the calculations and offline checks on a demo copy. `node tools/check-version.mjs` checks that the release versions match. In `tools/firebase`, run `npm ci` and `npm test` with Node 22+ and Java 21+ to check access rules using a local Firestore emulator and fake accounts. GitHub runs these checks on pull requests and pushes to `main`.
 - **How it's built:** see [ARCHITECTURE.md](ARCHITECTURE.md) for the data, the calculation rules and the access rules.
 - **Screenshots:** `node tools/screenshots.mjs` (Node 22+ and Edge or Chrome) rebuilds everything in `screenshots/` from a demo copy with invented data. Never use a real budget for screenshots.
-- **Releases:** bump the version in **three places together**: `APP_VERSION` in `docs/index.html`, the `?v=` on the `config.js` / `cloud.js` script tags, and `version:` in `docs/cloud.js`.
+- **Releases:** use the same version for `APP_VERSION` in `docs/index.html`, the `?v=` on the `config.js`, `cloud.js` and `calculations.js` script tags, and `version:` in `docs/cloud.js`.
 - **Firebase setup** (only for a new project): Email/Password sign-in with *create (sign-up)* and *delete* turned off, Firestore in production mode with `firestore.rules` published, and the browser API key restricted to the site's addresses (`davitos223.github.io/*`, `localhost:5174/*`, `<project>.firebaseapp.com/*`).

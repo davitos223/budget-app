@@ -30,7 +30,7 @@ if (cfg) {
       [k, v === null ? F.deleteField() : (v && typeof v === "object" && !Array.isArray(v)) ? nulls(v) : v]));
 
     window.Cloud = {
-      version: "20261122m",   // must match APP_VERSION in index.html
+      version: "20261122o",   // must match APP_VERSION in index.html
       signIn: (email, pw) => A.signInWithEmailAndPassword(auth, email, pw),
       signOut: () => A.signOut(auth),
       resetPassword: email => A.sendPasswordResetEmail(auth, email),

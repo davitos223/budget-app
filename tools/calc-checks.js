@@ -30,7 +30,7 @@ const FIX = {
 const load = (fix, budget = {}) => {
   S.budgets = [{ id: "fx", name: "Test", kind: "personal", owner: "local", members: ["local"], currency: "EUR", numStyle: "dot", categories: DEFAULT_CATS, ...budget }];
   S.bid = "fx"; S.entries = JSON.parse(JSON.stringify(fix.entries)); S.months = JSON.parse(JSON.stringify(fix.months)); S.goals = JSON.parse(JSON.stringify(fix.goals));
-  S.dataStamp++; carryCache.clear();
+  S.dataStamp++; clearCarryCache();
 };
 unsubBudget && unsubBudget(); unsubBudget = null;
 NOW = "2026-11-22";
@@ -120,10 +120,10 @@ delete S.budgets[0].limits;
 
 /* ---------- forecast and insights ---------- */
 check("forecast with no history uses this month's pace (20,29 in 22 days → 7,38 for the last 8)", (({ more, restDays, end, usual }) => ({ more, restDays, end, usual }))(forecast("2026-11")), { more: 7.38, restDays: 8, end: 1678.83, usual: null });
-S.entries.push(E({ id: "old", type: "spend", name: "Old shop", amount: 300, repeat: "once", start: "2026-10", category: "c9" })); S.dataStamp++; carryCache.clear();
+S.entries.push(E({ id: "old", type: "spend", name: "Old shop", amount: 300, repeat: "once", start: "2026-10", category: "c9" })); S.dataStamp++; clearCarryCache();
 check("forecast uses the usual monthly spending when there is history", (({ more, end, usual }) => ({ more, end, usual }))(forecast("2026-11")), { more: 279.71, end: 1406.5, usual: 300 });
 check("insights: forecast first, then utilities up, groceries down, total down, biggest cost", insights("2026-11").map(x => x.key), ["fc", "up:c5", "down:c9", "out", "top:c4"]);
-S.entries.pop(); S.dataStamp++; carryCache.clear();
+S.entries.pop(); S.dataStamp++; clearCarryCache();
 check("insights: forecast, utilities up 38,10 on last month, housing biggest", insights("2026-11").map(x => x.key), ["fc", "up:c5", "top:c4"]);
 check("forecast insight names the amount left (1.678,83 → 1.679 €)", insights("2026-11")[0].html.replace(/<[^>]+>/g, "").replace(/\s/g, " ").includes("1.679 € left"), true);
 check("no forecast insight for past months", insights("2026-10").some(x => x.key === "fc"), false);
@@ -148,6 +148,23 @@ check("a date in the past gives no plan", perMonth(100, "2026-11", "2026-10"), n
 check("monthly fills from the chosen month", backfillStart(ent("inc"), "2025-10"), "2025-10");
 check("quarterly keeps its quarters, never before the chosen month", backfillStart(ent("q"), "2025-10"), "2025-11");
 check("yearly keeps its month", backfillStart(ent("ins"), "2024-01"), "2024-05");
+
+/* ---------- weekly and every two weeks ---------- */
+const weekly = E({ id: "weekly", type: "bill", name: "Childcare", repeat: "weekly", start: "2026-11", due: 1, amount: 40, auto: true, until: "2026-11" });
+const fortnightly = E({ id: "fortnightly", type: "income", repeat: "biweekly", start: "2026-10", due: 30, amount: 100 });
+const weeklySpending = E({ id: "weekly-spend", type: "spend", repeat: "weekly", start: "2026-10", due: 30, amount: 15 });
+load({ entries: [weekly, fortnightly, weeklySpending], goals: [], months: {
+  "2026-11": { amounts: { weekly: 45 }, paid: { "weekly:2026-11-08": false } },
+  "2026-12": { skip: { "weekly-spend": true } },
+} });
+check("five weekly bills have their own calendar dates", monthItems("2026-11").filter(i => i.id === "weekly").map(i => i.due), [1, 8, 15, 22, 29]);
+check("every two weeks stays on the same weekday across months and years", ["2026-11", "2026-12", "2027-01"].map(m => weeklyDates(fortnightly, m).map(d => +d.slice(8))), [[13, 27], [11, 25], [8, 22]]);
+check("a payment override affects only the selected occurrence", monthItems("2026-11").filter(i => i.id === "weekly").map(i => i.paid), [true, false, true, true, false]);
+check("monthly totals count each income, bill and spending occurrence", [totals("2026-11").income, totals("2026-11").bills, totals("2026-11").spend], [200, 225, 60]);
+check("the last month includes all its occurrences and a skip covers the whole month", [totals("2026-12").bills, totals("2026-12").spend], [0, 0]);
+check("the annual plan groups all five payments under one bill", billsPlan(2026).items.map(i => [i.id, i.count, i.total, i.months]), [["weekly", 5, 225, [11]]]);
+check("backfilling every two weeks preserves the original date pattern", backfillSchedule(fortnightly, "2026-09"), { start: "2026-09", due: 4 });
+load(FIX);
 
 /* ---------- money formatting ---------- */
 const plain = s => s.replace(/\s/g, " ");
@@ -179,6 +196,33 @@ let acts = []; const stopA = Store.watchActivity(r.id, l => acts = l);
 logAct("add", { n: "First", a: 1, t: "spend" }); await wait(5); logAct("pay", { n: "Second", m: "2026-11" }); await wait(200);
 check("activity is recorded, newest first", acts.map(x => [x.k, x.n, x.by]), [["pay", "Second", "local"], ["add", "First", "local"]]);
 stopA();
+
+S.month = "2026-11";
+S.view = "month";
+S.sub = "details";
+openEntry(null, "bill");
+$("#fName").value = "Weekly lesson";
+$("#fAmt").value = "20";
+$("#fRep").value = "weekly";
+$("#fRep").dispatchEvent(new Event("change"));
+$("#save").click();
+check("the weekly form asks for a first day before saving", $("#toast").textContent, "Choose the first day");
+$("#fSD").value = "1";
+$("#save").click();
+await wait(100);
+const lesson = S.entries.find(e => e.name === "Weekly lesson");
+if (lesson) {
+  S.calDay = 8;
+  render();
+  const payments = monthItems(S.month).filter(i => i.id === lesson.id);
+  check("the weekly form saves a full series", payments.map(i => i.due), [1, 8, 15, 22, 29]);
+  const button = document.querySelector(`[data-act="pay"][data-id="${lesson.id}:2026-11-08"]`);
+  button?.click();
+  await wait(100);
+  check("ticking a bill in Details marks only that date paid", monthItems(S.month).filter(i => i.id === lesson.id && i.paid).map(i => i.due), [8]);
+} else {
+  check("the weekly form saves a full series", null, [1, 8, 15, 22, 29]);
+}
 await Store.deleteBudget(r.id);
 
 NOW = null;

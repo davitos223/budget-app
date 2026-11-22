@@ -1,0 +1,12 @@
+{
+  "name": "budget-firestore-checks",
+  "private": true,
+  "scripts": {
+    "test": "firebase emulators:exec --config ../../firebase.test.json --only firestore --project demo-budget-checks \"node --test rules.test.mjs\""
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "4.0.1",
+    "firebase": "11.10.0",
+    "firebase-tools": "15.36.0"
+  }
+}

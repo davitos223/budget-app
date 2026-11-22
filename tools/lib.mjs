@@ -79,6 +79,7 @@ export function buildDemo() {
   const dir = mkdtempSync(join(tmpdir(), "budget-demo-"));
   cpSync(join(DOCS, "icons"), join(dir, "icons"), { recursive: true });
   cpSync(join(DOCS, "manifest.webmanifest"), join(dir, "manifest.webmanifest"));
+  for (const asset of ["calculations.js", "sw.js"]) cpSync(join(DOCS, asset), join(dir, asset));
   writeFileSync(join(dir, "config.js"), "window.BUDGET_FIREBASE = null;\n");
   writeFileSync(join(dir, "cloud.js"), "// demo: no sync\n");
   const seed = `<style>.demo{display:none}</style><script>(() => { const q = new URLSearchParams(location.search); if (!q.has("seed")) return;
