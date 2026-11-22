@@ -14,6 +14,8 @@ const SHOTS = {
   "phone-limits": [PHONE, "", `openAllCats(); document.activeElement.blur();`],
   "phone-add": [PHONE, "", `openEntry(null, "spend"); const a = document.querySelector("#fAmt"); a.value = "42,80"; document.querySelector("#fName").value = "Farmers market"; document.activeElement.blur();`],
   "phone-goals": [PHONE, "view=goals"],
+  "phone-billplan": [PHONE, "", `openBillPlan(); document.activeElement.blur(); document.querySelector(".sheet").scrollTop = 0;`],
+  "phone-billplan2": [PHONE, "", `openBillPlan(); document.activeElement.blur(); const sh = document.querySelector(".sheet"); sh.scrollTop = sh.scrollHeight;`],
   "phone-dark": [PHONE, "theme=dark"],
   "desktop-light": [DESK, ""],
   "desktop-dark": [DESK, "theme=dark"],

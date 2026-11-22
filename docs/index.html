@@ -369,8 +369,8 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
 .savempty>*{position:relative;z-index:1}
 .savempty .e{font-size:3.2em}
 </style>
-<script src="config.js?v=20261122j"></script>
-<script type="module" src="cloud.js?v=20261122j"></script>
+<script src="config.js?v=20261122k"></script>
+<script type="module" src="cloud.js?v=20261122k"></script>
 </head>
 <body>
 <div id="app"></div>
@@ -379,7 +379,7 @@ body{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
 
 <script>
 "use strict";
-const APP_VERSION = "20261122j";
+const APP_VERSION = "20261122k";
 // demo mode: no Firebase config, or ?demo on a local test server (never touches the real account)
 const LOCAL = !window.BUDGET_FIREBASE || (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && /[?&]demo\b/.test(location.search));
 
@@ -610,6 +610,21 @@ function insights(m) {
   if (top && t.out > 0) out.push({ key: "top:" + top[0], icon: "🏠", tone: "", html: `<b>${esc(cat(top[0]).name)}</b> is your biggest cost this month (${Math.round(top[1] / t.out * 100)}% of everything going out).` });
   return out.slice(0, 4);
 }
+// every bill in a calendar year: how often, which months, and its total (one-month changes and skips included)
+function billsPlan(year) {
+  const map = {};
+  for (let i = 1; i <= 12; i++) {
+    const m = year + "-" + pad(i);
+    for (const it of monthItems(m)) if (it.type === "bill" && !it.skipped) {
+      const o = (map[it.id] ||= { id: it.id, name: it.name, category: it.category, repeat: it.repeat || "once", count: 0, total: 0, months: [] });
+      o.count++; o.total = r2(o.total + it.amt); o.months.push(i);
+    }
+  }
+  const items = Object.values(map).sort((a, z) => z.total - a.total);
+  return { items, total: sum(items, x => x.total) };
+}
+// how much to put aside each month from `from` to `by` (both included) to reach `total` — rounded UP to the cent so it's enough
+function perMonth(total, from, by) { const n = mi(by) - mi(from) + 1; return n > 0 ? Math.ceil(Math.round(total * 100) / n) / 100 : null; }
 // percent change, null if no base
 const change = (now, before) => before > 0 ? Math.round((now - before) / before * 100) : null;
 function chip(pct, lowerIsGood) {
@@ -901,6 +916,7 @@ function renderDetails(m, t, items, l, b) {
 }
 
 function renderYear() {
+  const cy = today().getFullYear();
   const y = S.year, ms = Array.from({ length: 12 }, (_, i) => y + "-" + pad(i + 1)), cur = thisMonth();
   const T = ms.map(m => ({ m, ...totals(m) }));
   const P = Array.from({ length: 12 }, (_, i) => totals((y - 1) + "-" + pad(i + 1)));
@@ -943,6 +959,9 @@ function renderYear() {
       </div>
     </div>
     <div class="grid">
+      ${(() => { const np = billsPlan(cy + 1); return `<div class="card" data-act="billplan" style="cursor:pointer"><div class="ttl"><b>🧾 Next year's bills</b><span class="lk" style="color:var(--accent);font-weight:700">Plan for them ›</span></div>
+        ${np.total ? `<div class="mrow"><span class="v" style="font-size:1.4em">${money(np.total, { round: true })}</span><span class="muted small">≈ ${money(np.total / 12, { round: true })} a month</span></div><div class="muted small" style="margin-top:4px">${np.items.length} bills in ${cy + 1}. See how much to put aside each month to have it ready.</div>`
+          : `<p class="muted small" style="margin:4px 0">No bills planned for ${cy + 1} yet. Bills that repeat show up here automatically.</p>`}</div>`; })()}
       <div class="card"><div class="ttl"><b>Categories</b><span class="muted small">${y}</span></div>${catRows.length ? catRows.slice(0, 7).map(([id, v]) => { const c = cat(id);
         return `<div class="row2" style="cursor:default"><span class="ci" style="background:${c.color}1f">${esc(c.emoji)}</span><span class="mn"><b>${esc(c.name)}</b><span>${Math.round(v / (out || 1) * 100)}% of everything going out</span><div class="thin"><i style="width:${v / catRows[0][1] * 100}%;background:${c.color}"></i></div></span><span class="rt"><b>${money(v, { round: true })}</b></span></div>`; }).join("") : `<p class="muted small" style="margin:4px 0">No spending categories recorded in ${y} yet. Bills and spending you add show up here, biggest first.</p>`}</div>
       <div class="card"><div class="ttl"><b>Biggest bills</b></div>${topBills.length ? topBills.map(x => { const c = cat(x.c);
@@ -959,6 +978,7 @@ function renderGoals() {
     ${gs.length ? `<div class="card gaugecard">${gauge(gs.map(g => ({ v: goalSaved(g), color: g.color || "var(--save)", t: g.name })), Math.max(target, total))}
       <div class="gl">Saved in total</div><div class="gv">${money(total)}</div>
       <div class="gs">${target ? `${Math.round(Math.min(1, total / target) * 100)}% of ${money(target, { round: true })} across ${gs.length} goal${gs.length > 1 ? "s" : ""}` : `${gs.length} goal${gs.length > 1 ? "s" : ""}`}</div></div>` : ""}
+    ${gs.length ? `<div class="card" data-act="billplan" style="cursor:pointer;display:flex;align-items:center;gap:12px"><span class="emo" style="background:color-mix(in srgb,#f97316 16%,transparent)">🧾</span><span style="flex:1"><b>Plan for next year's bills</b><br><span class="muted small">How much to put aside each month so next year's bills are covered</span></span><span style="color:var(--accent);font-weight:800">›</span></div>` : ""}
     ${gs.length ? `<div class="grid two" style="align-items:stretch">${gs.map(g => {
       const s = goalSaved(g), tg = num(g.target), pct = tg ? Math.min(100, s / tg * 100) : 0;
       return `<div class="card gcard" data-act="gview" data-id="${esc(g.id)}">
@@ -967,7 +987,7 @@ function renderGoals() {
         ${tg ? `<div class="bar"><i style="width:${pct}%;background:${g.color || "#8b5cf6"}"></i></div>` : ""}
         <div class="ft"><span>${tg ? (s >= tg ? "Reached!" : `${money(tg - s, { round: true })} to go${g.by ? " · by " + esc(monthName(g.by, { month: "short", year: "numeric" })) : ""}`) : "No target"}</span>
           <button class="btn sm pri" data-act="gmove" data-id="${esc(g.id)}" data-dir="1">+ Add money</button></div>
-      </div>`; }).join("")}</div>` : `<div class="card welcome savempty"><div class="e">🐷</div><h2 style="margin:6px 0">Saving for something?</h2><p class="muted">A holiday, a new car, an emergency fund… Make a goal, then put money in whenever you can. It shows up in that month's budget too.</p><button class="btn pri" data-act="goal">+ New savings goal</button></div>`}
+      </div>`; }).join("")}</div>` : `<div class="card welcome savempty"><div class="e">🐷</div><h2 style="margin:6px 0">Saving for something?</h2><p class="muted">A holiday, a new car, an emergency fund… Make a goal, then put money in whenever you can. It shows up in that month's budget too.</p><div class="addrow" style="justify-content:center"><button class="btn pri" data-act="goal">+ New savings goal</button><button class="btn" data-act="billplan">🧾 Plan for next year's bills</button></div></div>`}
   </div>`;
 }
 
@@ -984,6 +1004,50 @@ function openGoalView(id) {
     <div class="actions"><button class="btn pri" data-act="gmove" data-id="${esc(g.id)}" data-dir="1">+ Put money in</button><button class="btn" data-act="gmove" data-id="${esc(g.id)}" data-dir="-1">− Take out</button></div>
     ${(g.moves || []).length ? `<h4>History</h4><div>${[...g.moves].sort((a, b) => b.d.localeCompare(a.d)).slice(0, 12).map(d => `<div class="item" style="cursor:default"><div class="main"><div class="name">${num(d.a) >= 0 ? "Put in" : "Took out"}</div><div class="meta">${esc(new Date(d.d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }))}${d.by && B()?.kind === "shared" ? " · " + esc(whoName(d.by)) : ""}</div></div><div class="amt ${num(d.a) < 0 ? "bad" : ""}">${money(num(d.a))}</div></div>`).join("")}</div>` : ""}
     <div class="actions"><button class="btn" data-act="goal" data-id="${esc(g.id)}">Edit goal</button></div>`);
+}
+
+function openBillPlan() {
+  const cur = thisMonth(), cy = today().getFullYear();
+  let year = cy + 1, only = false, picked = null;
+  openSheet(`${head("🧾 Plan for next year's bills")}
+    <p class="muted small" style="margin-top:-6px">Adds up what your bills will cost in a year and works out how much to put aside each month so the money is there in time.</p>
+    <div class="cols"><label class="f"><span>Bills of</span><select id="bpY">${[cy + 1, cy + 2, cy].map(y => `<option ${y === year ? "selected" : ""}>${y}</option>`).join("")}</select></label>
+      <div class="f"><span>Which bills</span><div class="seg" id="bpO" style="margin:0"><button type="button" data-o="all" class="on">All</button><button type="button" data-o="irr">Not monthly</button></div></div></div>
+    <div id="bpL"></div>
+    <div class="f"><span>Have it saved by the end of</span>${monthSel("bpB", (year - 1) + "-12")}</div>
+    <div id="bpR"></div>
+    <div class="actions"><button class="btn pri" id="bpG">Make it a savings goal</button></div>`, sh => {
+    const draw = () => {
+      const plan = billsPlan(year);
+      const list = plan.items.filter(x => !only || x.repeat !== "monthly");
+      if (!picked) picked = new Set(plan.items.map(x => x.id));
+      const total = sum(list.filter(x => picked.has(x.id)), x => x.total);
+      sh.querySelector("#bpL").innerHTML = list.length ? `<div class="f"><span>${list.length} bill${list.length > 1 ? "s" : ""} in ${year} — untick any you don't want to save for</span>${list.map(x => { const c = cat(x.category);
+        const when = x.repeat === "monthly" ? `every month · ${money(x.total / x.count, { round: true, raw: true })}` : `${x.months.map(n => new Date(2000, n - 1, 1).toLocaleDateString("en-GB", { month: "short" })).join(", ")}`;
+        return `<label class="check" style="margin:0;padding:9px 0;border-top:1px solid var(--line)"><input type="checkbox" data-bp="${esc(x.id)}" ${picked.has(x.id) ? "checked" : ""}>
+          <span style="flex:1;min-width:0"><b>${esc(c.emoji)} ${esc(x.name)}</b><br><span class="muted small">${esc(when)}</span></span><b>${money(x.total, { round: true })}</b></label>`; }).join("")}</div>`
+        : `<p class="muted">${only ? "No bills that come less often than monthly in " + year + "." : "No bills in " + year + " yet. Add your regular bills first — repeating ones count automatically."}</p>`;
+      const by = readMonthSel(sh, "bpB"), pm = perMonth(total, cur, by), even = perMonth(total, year + "-01", year + "-12");
+      const n = mi(by) - mi(cur) + 1;
+      sh.querySelector("#bpR").innerHTML = total > 0 ? `<div class="box">
+        <div class="mrow"><span class="k">Bills to cover in ${year}</span><span class="v">${money(total)}</span></div>
+        <div style="margin-top:10px;font-weight:600">${pm != null ? `Put aside <b class="good" style="font-size:1.2em">${money(pm)} a month</b> for the next ${n} month${n > 1 ? "s" : ""} (${esc(monthName(cur, { month: "short", year: "numeric" }))} – ${esc(monthName(by, { month: "short", year: "numeric" }))}) to have it all by then.` : `<span class="bad">Pick a month from now on.</span>`}</div>
+        <div class="muted small" style="margin-top:8px">Or spread over ${year} itself: ${money(even)} a month — that's what these bills cost on average.</div></div>` : "";
+      sh.querySelector("#bpG").disabled = !(total > 0 && pm != null);
+    };
+    draw();
+    sh.querySelector("#bpY").onchange = ev => { year = +ev.target.value; picked = null; draw(); };
+    sh.querySelector("#bpO").onclick = ev => { const b = ev.target.closest("[data-o]"); if (!b) return; only = b.dataset.o === "irr"; sh.querySelectorAll("#bpO button").forEach(x => x.classList.toggle("on", x === b)); draw(); };
+    sh.querySelector("#bpL").addEventListener("change", ev => { const c = ev.target.closest("[data-bp]"); if (!c) return; c.checked ? picked.add(c.dataset.bp) : picked.delete(c.dataset.bp); draw(); });
+    sh.querySelector("#bpBM").onchange = sh.querySelector("#bpBY").onchange = draw;
+    sh.querySelector("#bpG").onclick = () => {
+      const plan = billsPlan(year), total = sum(plan.items.filter(x => (!only || x.repeat !== "monthly") && picked.has(x.id)), x => x.total), by = readMonthSel(sh, "bpB");
+      const name = `Bills ${year}`, old = S.goals.find(g => g.name === name);
+      w(Store.saveItem(S.bid, "goals", old?.id || null, { ...(old ? strip(old) : { moves: [], createdAt: Date.now(), color: "#f97316" }), name, emoji: "🧾", target: total, by }).done);
+      closeSheet(); toast(old ? `“${name}” updated` : `Savings goal “${name}” made — put money in each month`);
+      S.view = "goals"; _render(); window.scrollTo(0, 0);
+    };
+  });
 }
 
 function openAllCats() {
@@ -1535,6 +1599,7 @@ document.addEventListener("click", ev => {
     calday: () => { S.calDay = +t.dataset.d; _render(); },
     sub: () => { S.sub = t.dataset.v; closeSheet(); _render(); },
     allcats: openAllCats,
+    billplan: openBillPlan,
     gmove: () => openMove(t.dataset.id, +t.dataset.dir),
     sort: () => { const order = ["due", "unpaid", "amount", "name"]; const n = order[(order.indexOf(look().billSort) + 1) % order.length];
       S.profile.look = { ...look(), billSort: n }; render(); w(Store.saveProfile({ look: { billSort: n } })); },

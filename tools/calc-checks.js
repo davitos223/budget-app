@@ -130,6 +130,16 @@ S.budgets[0].limits = { c9: 22 };
 check("insights warn near a limit (20,29 of 22 = 92%)", insights("2026-11").some(x => x.key === "near:c9"), true);
 delete S.budgets[0].limits;
 
+/* ---------- plan for next year's bills ---------- */
+const bp = billsPlan(2027);
+check("2027 bills: rent 12×650, electricity 12×85,40, water 6×38,10, insurance 420 (loan has ended)", bp.items.map(x => [x.id, x.count, x.total]), [["rent", 12, 7800], ["elec", 12, 1024.8], ["ins", 1, 420], ["water", 6, 228.6]]);
+check("2027 bills total", bp.total, 9473.4);
+check("water comes in Jan, Mar, May, Jul, Sep, Nov", bp.items.find(x => x.id === "water").months, [1, 3, 5, 7, 9, 11]);
+check("to have it all by end of Dec 2026, from Nov: 2 months", perMonth(9473.4, "2026-11", "2026-12"), 4736.7);
+check("spread over 2027: ÷ 12", perMonth(9473.4, "2027-01", "2027-12"), 789.45);
+check("amount per month is rounded up so it's enough (100 over 3 months)", perMonth(100, "2026-01", "2026-03"), 33.34);
+check("a date in the past gives no plan", perMonth(100, "2026-11", "2026-10"), null);
+
 /* ---------- fill in earlier months ---------- */
 check("monthly fills from the chosen month", backfillStart(ent("inc"), "2025-10"), "2025-10");
 check("quarterly keeps its quarters, never before the chosen month", backfillStart(ent("q"), "2025-10"), "2025-11");
