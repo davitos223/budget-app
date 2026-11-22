@@ -220,6 +220,22 @@ if (lesson) {
   button?.click();
   await wait(100);
   check("ticking a bill in Details marks only that date paid", monthItems(S.month).filter(i => i.id === lesson.id && i.paid).map(i => i.due), [8]);
+  S.sub = "summary";
+  render();
+  $(".home-metric[data-filter]")?.click();
+  check("Still to pay opens unpaid bills for the selected month", [S.month, $("#billsCard [aria-pressed=true]")?.textContent], ["2026-11", "Unpaid"]);
+  check("the filtered bills list omits the paid occurrence", !!document.querySelector(`#billsCard [data-id="${lesson.id}:2026-11-08"]`), false);
+  const key = `${lesson.id}:2026-11-15`;
+  document.querySelector(`#billsCard [data-id="${key}"]`)?.click();
+  await wait(100);
+  check("a paid occurrence leaves the Unpaid filter", !!document.querySelector(`#billsCard [data-id="${key}"]`), false);
+  $(".toast-undo")?.click();
+  await wait(100);
+  check("Undo restores that occurrence and keeps the other payment", monthItems(S.month).filter(i => i.id === lesson.id && i.paid).map(i => i.due), [8]);
+  check("the undone occurrence reappears in Unpaid", !!document.querySelector(`#billsCard [data-id="${key}"]`), true);
+  $("main [data-v=summary]")?.click();
+  $('.home-spend-row[data-id="c9"]')?.click();
+  check("a Home category opens only that month's transactions", [S.month, $(".category-detail h1")?.textContent, document.querySelectorAll(".category-detail .item").length], ["2026-11", "Groceries", 3]);
 } else {
   check("the weekly form saves a full series", null, [1, 8, 15, 22, 29]);
 }

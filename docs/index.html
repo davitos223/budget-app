@@ -9,9 +9,9 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="preload" href="config.js?v=20261122r" as="script">
-<link rel="preload" href="calculations.js?v=20261122r" as="script">
-<script type="module" src="cloud.js?v=20261122r"></script>
+<link rel="preload" href="config.js?v=20261122s" as="script">
+<link rel="preload" href="calculations.js?v=20261122s" as="script">
+<script type="module" src="cloud.js?v=20261122s"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- the font loads without holding up the first paint -->
@@ -430,7 +430,8 @@ button.home-metric:hover { border-color:var(--accent); }
 .home-pay::before { content:""; border:1.5px solid var(--muted); width:19px; height:19px; border-radius:5px; }
 .home-pay:hover, .home-pay:focus-visible { background:var(--card2); }
 .home-bill .money { white-space:normal; text-align:right; }
-.home-spend-row { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:4px 8px; align-items:center; margin:12px 0; }
+.home-spend-row { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:4px 8px; align-items:center; width:100%; border:0; background:none; padding:9px 4px; text-align:left; border-radius:8px; }
+.home-spend-row:hover, .home-spend-row:focus-visible { background:var(--card2); }
 .home-spend-row .thin { grid-column:2/-1; margin:0; height:7px; }
 .home-spend-row .thin i { background:var(--accent); }
 .details-heading { margin:4px 0 12px; }
@@ -499,6 +500,11 @@ button.home-metric:hover { border-color:var(--accent); }
 .year-tip-row { display:flex; justify-content:space-between; gap:14px; padding:2px 0; }
 .year-tip-row:last-of-type { border-top:1px solid var(--line); margin-top:4px; padding-top:5px; }
 .year-tip .tip-hint { display:block; margin-top:6px; font-size:.9em; }
+.bill-filters { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 8px; }
+.bill-filters .btn[aria-pressed="true"] { background:var(--accent-soft); color:var(--text); border-color:var(--accent); }
+.category-detail { max-width:800px; }
+.category-total { margin:0 0 14px; }
+.toast-undo { border:0; background:none; color:inherit; min-height:44px; padding:0 8px; margin-left:10px; text-decoration:underline; font-weight:800; }
 </style>
 </head>
 <body>
@@ -507,13 +513,13 @@ button.home-metric:hover { border-color:var(--accent); }
   <p class="muted" role="status" style="margin:0">Opening Budget…</p>
 </div></div></div>
 <div class="scrim" id="scrim" hidden></div>
-<div class="toast" id="toast" hidden></div>
+<div class="toast" id="toast" role="status" hidden></div>
 
-<script src="config.js?v=20261122r"></script>
-<script src="calculations.js?v=20261122r"></script>
+<script src="config.js?v=20261122s"></script>
+<script src="calculations.js?v=20261122s"></script>
 <script>
 "use strict";
-const APP_VERSION = "20261122r";
+const APP_VERSION = "20261122s";
 // demo mode: no Firebase config, or ?demo on a local test server (never touches the real account)
 const LOCAL = !window.BUDGET_FIREBASE || (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && /[?&]demo\b/.test(location.search));
 
@@ -588,7 +594,7 @@ function makeLocalStore() {
 /* ---------- state ---------- */
 let Store = null;
 const S = { user: null, profile: {}, budgets: [], bid: null, entries: [], months: {}, goals: [], month: thisMonth(), year: today().getFullYear(),
-  view: "month", sub: "summary", hide: false, activity: [], ready: false, loaded: false, dataStamp: 0 };
+  view: "month", sub: "summary", billFilter:"all", categoryDetail:null, hide: false, activity: [], ready: false, loaded: false, dataStamp: 0 };
 let unsub = [], unsubBudget = null, creatingPersonal = false;
 const B = () => S.budgets.find(b => b.id === S.bid);
 const look = () => ({ theme: "auto", accent: "teal", size: "normal", start: "month", hideOnStart: false, billSort: "due", ...(S.profile.look || {}) });
@@ -826,6 +832,7 @@ function gauge(segs, total) {
 
 function renderMonth() {
   const m = S.month, t = totals(m), items = monthItems(m), l = look(), b = B();
+  if (S.categoryDetail !== null) return renderCategoryDetail(m, items, S.categoryDetail);
   if (!S.entries.length && !S.goals.length) return `<div class="card welcome">
     <div class="e">👋</div><h2 style="margin:6px 0">Let's set up ${esc(b?.name || "your budget")}</h2>
     <p class="muted">Add your income and your regular bills once. Bills that repeat show up every month on their own — you just tick them off when they're paid.</p>
@@ -868,7 +875,7 @@ function renderSummary(m, t, items) {
       <button class="lk" data-act="sub" data-v="details">View month details <span aria-hidden="true">→</span></button>
     </section>
     <div class="home-metrics">
-      <button class="card home-metric" data-act="sub" data-v="details" data-to="billsCard">
+      <button class="card home-metric" data-act="sub" data-v="details" data-to="billsCard" data-filter="unpaid">
         <span class="muted">Still to pay</span><strong>${money(t.unpaid)}</strong>
         <span class="muted small">${t.unpaidCount ? `${t.unpaidCount} bill${t.unpaidCount === 1 ? "" : "s"} outstanding` : t.billCount ? "All bills paid" : "No bills this month"}</span>
       </button>
@@ -887,8 +894,9 @@ function renderSummary(m, t, items) {
       <div class="home-card-title"><h2>Spending this month</h2><b>${money(t.spend)}</b></div>
       ${top.length ? top.map(([id, value]) => {
         const c = cat(id);
-        return `<div class="home-spend-row"><span class="ci" aria-hidden="true">${esc(c.emoji)}</span><b>${esc(c.name)}</b><span>${money(value)}</span>
-          <div class="thin" aria-hidden="true"><i style="width:${100 * value / sum(categories, row => row[1])}%"></i></div></div>`;
+        return `<button class="home-spend-row" data-act="category-detail" data-id="${esc(id)}" aria-label="View transactions for ${esc(c.name)}"><span class="ci" aria-hidden="true">${esc(c.emoji)}</span>
+          <b>${esc(c.name)}</b><span>${money(value)} <span aria-hidden="true">›</span></span>
+          <span class="thin" aria-hidden="true"><i style="width:${100 * value / sum(categories, row => row[1])}%"></i></span></button>`;
       }).join("") : '<p class="muted small">No spending recorded this month.</p>'}
     </section>
     ${goal ? `<section class="card">
@@ -897,6 +905,20 @@ function renderSummary(m, t, items) {
       <div class="mbar" aria-hidden="true"><i style="width:${Math.max(0, goalSaved(goal) / num(goal.target) * 100)}%"></i></div>
     </section>` : ""}
   </div>`;
+}
+
+const spendingOrder = (a, b) => (b.due || 0) - (a.due || 0) || (b.createdAt || 0) - (a.createdAt || 0);
+
+function renderCategoryDetail(m, items, id) {
+  const category = cat(id);
+  const transactions = items.filter(i => i.type === "spend" && !i.skipped && String(i.category) === id).sort(spendingOrder);
+  return `<section class="category-detail">
+    <button class="lk" data-act="sub" data-v="summary">‹ Back to Home</button>
+    <h1 class="details-heading" tabindex="-1">${esc(category.name)}</h1>
+    <div class="card category-total"><span class="muted">Spent this month</span><div class="gv">${money(sum(transactions, i => i.amt))}</div></div>
+    <h2 class="details-heading">Transactions</h2>
+    <div class="card flat">${transactions.length ? transactions.map(i => itemRow(i, m)).join("") : '<p class="muted small">No transactions in this category this month.</p>'}</div>
+  </section>`;
 }
 
 function flowMoney(value, signed = true) {
@@ -983,10 +1005,15 @@ function renderDetails(m, t, items, l, b) {
   const inc = items.filter(i => i.type === "income").sort((a, z) => z.amt - a.amt);
   const sorters = { due: (a, z) => (a.due || 99) - (z.due || 99) || a.name.localeCompare(z.name), amount: (a, z) => z.amt - a.amt, name: (a, z) => (a.name || "").localeCompare(z.name || ""), unpaid: (a, z) => a.paid - z.paid || (a.due || 99) - (z.due || 99) };
   const bills = items.filter(i => i.type === "bill").sort(sorters[l.billSort] || sorters.due);
-  const spend = items.filter(i => i.type === "spend").sort((a, z) => (z.due || 0) - (a.due || 0) || (z.createdAt || 0) - (a.createdAt || 0));
+  const spend = items.filter(i => i.type === "spend").sort(spendingOrder);
+  const filteredBills = bills.filter(i => S.billFilter === "all" || (!i.skipped && i.paid === (S.billFilter === "paid")));
+  const billFilters = `<div class="bill-filters" role="group" aria-label="Filter bills">${["All", "Unpaid", "Paid"].map(label => {
+    const value = label.toLowerCase();
+    return `<button class="btn sm" data-act="bill-filter" data-v="${value}" aria-pressed="${S.billFilter === value}">${label}</button>`;
+  }).join("")}</div>`;
   const moves = goalMoves(m);
-  const section = (title, list, type, total, id, extra = "") => `<div id="${id}"><div class="sec"><span>${title} · ${money(total, { round: true })}</span><span>${extra}<button class="lk" data-act="add" data-type="${type}">+ Add</button></span></div>
-    <div class="card flat">${list.length ? list.map(i => itemRow(i, m)).join("") : `<div class="empty">Nothing here this month.</div>`}</div></div>`;
+  const section = (title, list, type, total, id, extra = "", filters = "", empty = "Nothing here this month.") => `<div id="${id}"><div class="sec"><span>${title} · ${money(total, { round: true })}</span><span>${extra}<button class="lk" data-act="add" data-type="${type}">+ Add</button></span></div>
+    ${filters}<div class="card flat">${list.length ? list.map(i => itemRow(i, m)).join("") : `<div class="empty">${empty}</div>`}</div></div>`;
   let whoCard = "";
   if (b?.kind === "shared") {
     const by = {};
@@ -1010,7 +1037,10 @@ function renderDetails(m, t, items, l, b) {
   </div>
   <div class="grid two" style="margin-top:14px">
     <div class="grid">
-      ${section("Bills", bills, "bill", t.bills, "billsCard", bills.length ? `<button class="lk" data-act="sort">${({ due: "By date", amount: "By amount", name: "A–Z", unpaid: "Unpaid first" })[l.billSort] || "By date"}</button>` : "")}
+      ${section(S.billFilter === "unpaid" ? "Still to pay" : S.billFilter === "paid" ? "Paid bills" : "Bills", filteredBills, "bill",
+        S.billFilter === "unpaid" ? t.unpaid : S.billFilter === "paid" ? sum(filteredBills, i => i.amt) : t.bills, "billsCard",
+        bills.length ? `<button class="lk" data-act="sort">${({ due: "By date", amount: "By amount", name: "A–Z", unpaid: "Unpaid first" })[l.billSort] || "By date"}</button>` : "",
+        billFilters, S.billFilter === "unpaid" ? "No unpaid bills this month." : S.billFilter === "paid" ? "No paid bills this month." : undefined)}
       ${section("Spending", spend, "spend", t.spend, "spendCard")}
     </div>
     <div class="grid">
@@ -1200,7 +1230,18 @@ function openSheet(html, mount) {
 function closeSheet() { const sc = $("#scrim"); sc.hidden = true; sc.innerHTML = ""; document.body.classList.remove("noscroll"); }
 const head = t => `<h3>${t}<button class="ib x" data-close title="Close">✕</button></h3>`;
 let toastT;
-function toast(msg) { const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2800); }
+function toast(msg, undo) {
+  const t = $("#toast");
+  t.textContent = msg;
+  t.hidden = false;
+  clearTimeout(toastT);
+  if (undo) {
+    const button = Object.assign(document.createElement("button"), { type:"button", className:"toast-undo", textContent:"Undo" });
+    button.onclick = undo;
+    t.append(button);
+  }
+  toastT = setTimeout(() => { t.hidden = true; t.replaceChildren(); }, undo ? 8000 : 2800);
+}
 
 // categories, the ones used most recently first (up to 4), then the rest in their usual order
 function recentCats(kind) {
@@ -1641,6 +1682,8 @@ async function importJSON(ev) {
 function selectBudget(id) {
   if (S.bid === id && unsubBudget) return;
   unsubBudget && unsubBudget();
+  S.categoryDetail = null;
+  S.billFilter = "all";
   S.bid = id; S.entries = []; S.months = {}; S.goals = []; S.loaded = false; S.dataStamp = 0; clearCarryCache();
   try { localStorage.setItem("budget.last." + S.user.uid, id); } catch {}
   let got = 0;
@@ -1740,18 +1783,26 @@ document.addEventListener("click", ev => {
   const a = t.dataset.act;
   if (a === "pay") {
     ev.stopPropagation();
-    const it = monthItems(S.month).find(i => i.paymentKey === t.dataset.id); if (!it) return;
-    w(Store.setMonth(S.bid, S.month, { paid: { [it.paymentKey]: !it.paid } }));
-    logAct(it.paid ? "unpay" : "pay", { n: it.name, a: it.paid ? null : it.amt, m: S.month });
-    if (!it.paid) toast(`${it.name} paid ✓`);
+    const month = S.month, bid = S.bid, uid = S.user.uid;
+    const it = monthItems(month).find(i => i.type === "bill" && i.paymentKey === t.dataset.id); if (!it) return;
+    const previous = S.months[month]?.paid?.[it.paymentKey] ?? null;
+    w(Store.setMonth(bid, month, { paid: { [it.paymentKey]: !it.paid } }));
+    logAct(it.paid ? "unpay" : "pay", { n: it.name, a: it.paid ? null : it.amt, m: month });
+    if (it.paid) toast(`${it.name} marked unpaid`);
+    else toast(`${it.name} marked paid`, () => {
+      if (S.user?.uid !== uid || S.bid !== bid) { toast("Reopen the original budget to change this bill"); return; }
+      w(Store.setMonth(bid, month, { paid: { [it.paymentKey]: previous } }));
+      logAct("unpay", { n: it.name, m: month });
+      toast("Payment tick undone");
+    });
     return;
   }
   ({
-    tab: () => { S.view = t.dataset.v; if (S.view === "month") S.sub = "summary"; if (S.view === "year") S.year = +S.month.slice(0, 4); _render(); window.scrollTo(0, 0); },
+    tab: () => { S.view = t.dataset.v; S.categoryDetail = null; if (S.view === "month") S.sub = "summary"; if (S.view === "year") S.year = +S.month.slice(0, 4); _render(); window.scrollTo(0, 0); },
     prev: () => { if (S.view === "year") S.year--; else S.month = mk(mi(S.month) - 1); S.calDay = null; render(); },
     next: () => { if (S.view === "year") S.year++; else S.month = mk(mi(S.month) + 1); S.calDay = null; render(); },
     now: () => { S.month = thisMonth(); S.year = today().getFullYear(); render(); },
-    ymonth: () => { S.month = t.dataset.m; S.view = "month"; S.sub = "details"; render(); window.scrollTo(0, 0); },
+    ymonth: () => { S.month = t.dataset.m; S.view = "month"; S.sub = "details"; S.billFilter = "all"; render(); window.scrollTo(0, 0); },
     add: () => openEntry(null, t.dataset.type),
     quick: openQuick,
     edit: () => openEntry(t.dataset.id),
@@ -1763,8 +1814,21 @@ document.addEventListener("click", ev => {
     goal: () => openGoal(t.dataset.id),
     gview: () => openGoalView(t.dataset.id),
     calday: () => { S.calDay = +t.dataset.d; _render(); },
+    "bill-filter": () => {
+      S.billFilter = t.dataset.v;
+      _render();
+      $('.bill-filters [aria-pressed="true"]')?.focus({ preventScroll:true });
+    },
+    "category-detail": () => {
+      S.categoryDetail = t.dataset.id;
+      _render();
+      $(".category-detail h1")?.focus({ preventScroll:true });
+      window.scrollTo(0, 0);
+    },
     sub: () => {
       S.sub = t.dataset.v;
+      S.categoryDetail = null;
+      S.billFilter = t.dataset.filter || "all";
       closeSheet();
       _render();
       const target = t.dataset.to ? document.getElementById(t.dataset.to) : $("main h1");
