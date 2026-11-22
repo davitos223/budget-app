@@ -8,7 +8,7 @@ const handled = url => url.origin === location.origin || url.hostname === "fonts
 const good = res => res.ok || res.type === "opaque";   // cross-site font CSS comes back opaque
 
 const shell = new URL("./", self.registration.scope);
-const isCalculation = url => url.pathname === new URL("calculations.js", shell).pathname;
+const scripts = new Set(["config.js", "cloud.js", "calculations.js"].map(file => new URL(file, shell).pathname));
 
 // Keep the matching scripts before saving a new page. An interrupted update
 // can then fall back to the previous page with its own script versions.
@@ -39,8 +39,8 @@ self.addEventListener("fetch", e => {
   const req = e.request;
   const url = new URL(req.url);
   if (req.method !== "GET" || !handled(url)) return;
-  if (url.origin === location.origin && isCalculation(url)) {
-    // Old offline pages must keep loading the calculations they shipped with.
+  if (url.origin === shell.origin && scripts.has(url.pathname) && url.searchParams.has("v")) {
+    // The page version selects the matching local scripts from the cache.
     e.respondWith(caches.match(req).then(res => res || fetch(req, { cache: "no-cache" })));
     return;
   }

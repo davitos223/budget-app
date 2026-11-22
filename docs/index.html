@@ -9,6 +9,9 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preload" href="config.js?v=20261122p" as="script">
+<link rel="preload" href="calculations.js?v=20261122p" as="script">
+<script type="module" src="cloud.js?v=20261122p"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- the font loads without holding up the first paint -->
@@ -380,18 +383,20 @@ body{padding-bottom:calc(120px + env(safe-area-inset-bottom))}
 .row2 .mn .atx{font-size:.95em;color:var(--text);font-weight:600;line-height:1.4}
 .row2 .mn .atx b{display:inline;font-weight:800}
 </style>
-<script src="config.js?v=20261122o"></script>
-<script type="module" src="cloud.js?v=20261122o"></script>
-<script src="calculations.js?v=20261122o"></script>
 </head>
 <body>
-<div id="app"></div>
+<div id="app"><div class="loginbg"><div class="login">
+  <h1 style="margin:0 0 4px;font-weight:800">Budget</h1>
+  <p class="muted" role="status" style="margin:0">Opening Budget…</p>
+</div></div></div>
 <div class="scrim" id="scrim" hidden></div>
 <div class="toast" id="toast" hidden></div>
 
+<script src="config.js?v=20261122p"></script>
+<script src="calculations.js?v=20261122p"></script>
 <script>
 "use strict";
-const APP_VERSION = "20261122o";
+const APP_VERSION = "20261122p";
 // demo mode: no Firebase config, or ?demo on a local test server (never touches the real account)
 const LOCAL = !window.BUDGET_FIREBASE || (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && /[?&]demo\b/.test(location.search));
 
@@ -1645,7 +1650,6 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden && S.
 /* ---------- boot ---------- */
 if (LOCAL) { Store = makeLocalStore(); start({ uid: "local", email: "" }); }
 else {
-  $("#app").innerHTML = `<div class="loginbg"><div class="login muted">Loading…</div></div>`;
   window.addEventListener("cloud-auth", e => {
     if (e.detail) { if (S.user?.uid === e.detail.uid) return; Store = window.Cloud; start(e.detail); }
     else { if (S.ready) signOut(); showLogin(); }

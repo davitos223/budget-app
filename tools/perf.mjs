@@ -7,7 +7,7 @@ try {
   const r = await page.eval(`const out = {};
     for (const [v, sub] of [["month", "summary"], ["month", "details"], ["year", "summary"], ["goals", "summary"]]) {
       S.view = v; S.sub = sub; _render();
-      const t0 = performance.now(); for (let i = 0; i < 20; i++) { S.dataStamp++; carryCache.clear(); _render(); }
+      const t0 = performance.now(); for (let i = 0; i < 20; i++) { S.dataStamp++; clearCarryCache(); _render(); }
       out[v + "/" + sub] = Math.round((performance.now() - t0) / 20 * 10) / 10 + " ms";
     }
     out.entries = S.entries.length; return out;`);
