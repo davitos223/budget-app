@@ -64,7 +64,7 @@ export function demoData() {
   ].map(([kind, emoji, name], i) => ({ id: "c" + i, kind, emoji, name, color: ["#6366f1", "#14b8a6", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#0ea5e9", "#f97316", "#22c55e", "#84cc16", "#06b6d4", "#a855f7", "#64748b", "#d946ef"][i % 14] }));
   const budget = { name: "Household", emoji: "🏡", kind: "shared", owner: A, members: [A, Bu], memberNames: { [A]: "Alex", [Bu]: "Sam" },
     currency: "EUR", numStyle: "dot", carry: false, categories: cats, limits: { c9: 600, c10: 140, c8: 160, c14: 80 }, createdAt: 1 };
-  return { profile: { name: "Alex", look: { theme: "light", accent: "indigo", size: "normal", start: "month" } },
+  return { profile: { name: "Alex", look: { theme: "light", accent: "teal", size: "normal", start: "month" } },
     budgets: { demo: budget, mine: { name: "My budget", emoji: "💰", kind: "personal", owner: A, members: [A], memberNames: { [A]: "Alex" }, currency: "EUR", numStyle: "dot", categories: cats, createdAt: 0 } },
     items: { demo: { entries, goals, activity: (() => { const H = 3600e3, t = Date.now(), m = mk(nowI); const L = [
       [0.3, Bu, "add", { n: "Weekly shop", a: 128.4, t: "spend" }], [2, A, "pay", { n: "Internet & TV", a: 44.9, m }], [5, Bu, "goalIn", { n: "Summer holiday", a: 150 }],
@@ -89,7 +89,7 @@ export function buildDemo() {
   localStorage.clear();
   localStorage.setItem("budget.demo.v1", JSON.stringify(data));
   localStorage.setItem("budget.last.local", "demo");
-  localStorage.setItem("budget.look", JSON.stringify({ theme: data.profile.look.theme, size: "normal", accentHex: "#5b5fd6" }));
+  localStorage.setItem("budget.look", JSON.stringify({ theme: data.profile.look.theme, size: "normal", accentHex: "#0d9488" }));
 })();</script>`;
   let html = readFileSync(join(DOCS, "index.html"), "utf8");
   const tag = html.match(/<script src="config\.js[^"]*"><\/script>/)[0];
