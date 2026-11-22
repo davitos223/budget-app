@@ -259,8 +259,8 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-
 .err{color:var(--bad);font-size:.9em;min-height:1.2em;margin:4px 0 8px}
 .demo{background:#00000030;color:#fff;font-size:.78em;font-weight:700;text-align:center;padding:5px 10px}
 </style>
-<script src="config.js?v=20261122c"></script>
-<script type="module" src="cloud.js?v=20261122c"></script>
+<script src="config.js?v=20261122d"></script>
+<script type="module" src="cloud.js?v=20261122d"></script>
 </head>
 <body>
 <div id="app"></div>
@@ -269,7 +269,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-
 
 <script>
 "use strict";
-const APP_VERSION = "20261122c";
+const APP_VERSION = "20261122d";
 // demo mode: no Firebase config, or ?demo on a local test server (never touches the real account)
 const LOCAL = !window.BUDGET_FIREBASE || (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && /[?&]demo\b/.test(location.search));
 
@@ -679,7 +679,9 @@ function renderYear() {
   const T = ms.map(m => ({ m, ...totals(m) }));
   const P = Array.from({ length: 12 }, (_, i) => totals((y - 1) + "-" + pad(i + 1)));
   const inc = sum(T, t => t.income), out = sum(T, t => t.out), saved = sum(T, t => t.saved);
-  const pinc = sum(P, t => t.income), pout = sum(P, t => t.out);
+  // only compare with last year when it has data from January on (a partial first year would give silly percentages)
+  const fm = firstMonth(), fullPrev = fm && fm <= (y - 1) + "-01";
+  const pinc = fullPrev ? sum(P, t => t.income) : 0, pout = fullPrev ? sum(P, t => t.out) : 0;
   const past = T.filter(t => t.m <= cur);
   const max = Math.max(...T.map(t => Math.max(t.income, t.out)), 1);
   const W = 720, H = 240, pb = 26, cw = W / 12, bw = cw * .3;

@@ -1,0 +1,36 @@
+// Remakes the README screenshots from a demo copy with invented data (never the real database):
+//   node tools/screenshots.mjs            all of them
+//   node tools/screenshots.mjs phone-add  just the ones named
+import { join } from "node:path";
+import { ROOT, buildDemo, serve, browser } from "./lib.mjs";
+
+const PHONE = [390, 844, 3, true], DESK = [1440, 900, 2, false];
+const scrollTo = sel => `const p = document.querySelector("${sel}"); scrollTo(0, p.getBoundingClientRect().top + scrollY - 12);`;
+const SHOTS = {
+  "phone-home": [PHONE, ""],
+  "phone-bills": [PHONE, "", scrollTo("#billsCard")],
+  "phone-limits": [PHONE, "", `const s = [...document.querySelectorAll(".sec")].find(x => x.textContent.startsWith("Spending limits")); scrollTo(0, s.getBoundingClientRect().top + scrollY - 12);`],
+  "phone-add": [PHONE, "", `openEntry(null, "spend"); const a = document.querySelector("#fAmt"); a.value = "42,80"; document.querySelector("#fName").value = "Farmers market"; document.activeElement.blur();`],
+  "phone-goals": [PHONE, "view=goals"],
+  "phone-dark": [PHONE, "theme=dark"],
+  "desktop-light": [DESK, ""],
+  "desktop-dark": [DESK, "theme=dark"],
+  "desktop-year": [DESK, "view=year", `scrollTo(0, 640);`],
+  "desktop-month": [DESK, "", `scrollTo(0, 820);`],
+  "desktop-settings": [DESK, "", `openSettings(); document.activeElement.blur();`],
+};
+
+const only = process.argv.slice(2);
+const demo = buildDemo(), server = await serve(demo.dir), page = await browser();
+try {
+  for (const [name, [vp, query, action]] of Object.entries(SHOTS)) {
+    if (only.length && !only.includes(name)) continue;
+    await page.viewport(...vp);
+    await page.goto(server.url + "?seed&" + query, 1500);
+    if (action) await page.eval(action);
+    await page.sleep(900);
+    await page.screenshot(join(ROOT, "screenshots", name + ".png"));
+    console.log("saved screenshots/" + name + ".png");
+  }
+  if (page.errors.length) console.log("page errors:", page.errors);
+} finally { page.close(); server.close(); demo.cleanup(); }
