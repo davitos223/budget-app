@@ -38,7 +38,7 @@ export function demoData() {
   // spending, month by month
   for (let i = nowI - 11; i <= nowI; i++) {
     const m = mk(i), last = i === nowI ? cd : 28;
-    const spend = (name, cat, a, b, day, by) => { if (day <= last) add({ type: "spend", name, amount: U(a, b), category: cat, repeat: "once", start: m, by: by || (rnd() < .5 ? A : Bu), createdAt: Date.UTC(+m.slice(0, 4), +m.slice(5) - 1, day) }); };
+    const spend = (name, cat, a, b, day, by) => { if (day <= last) add({ type: "spend", name, amount: U(a, b), category: cat, repeat: "once", start: m, due: day, by: by || (rnd() < .5 ? A : Bu), createdAt: Date.UTC(+m.slice(0, 4), +m.slice(5) - 1, day) }); };
     for (const d of [3, 10, 17, 24]) spend("Weekly shop", "c9", 95, 150, d);
     spend("Dinner out", "c10", 38, 72, 9); spend("Lunch", "c10", 14, 26, 19);
     spend("Fuel", "c8", 55, 72, 7); spend("Fuel", "c8", 50, 70, 21);

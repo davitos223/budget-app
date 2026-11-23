@@ -9,9 +9,9 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="preload" href="config.js?v=20261122v" as="script">
-<link rel="preload" href="calculations.js?v=20261122v" as="script">
-<script type="module" src="cloud.js?v=20261122v"></script>
+<link rel="preload" href="config.js?v=20261123a" as="script">
+<link rel="preload" href="calculations.js?v=20261123a" as="script">
+<script type="module" src="cloud.js?v=20261123a"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- the font loads without holding up the first paint -->
@@ -560,6 +560,36 @@ button.home-metric:hover { border-color:var(--accent); }
 .month-details .sec > span:last-child { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:4px; }
 .month-details .sec .lk { font-size:1.1em; }
 .month-details .sec .lk + .lk { margin-left:0; }
+.home-hero { grid-area:balance; }
+.home-metrics { grid-area:metrics; }
+.home-bills { grid-area:bills; }
+.home-pace { grid-area:pace; }
+.home-spending { grid-area:spending; }
+.home-recent { grid-area:recent; }
+.home-goal { grid-area:goal; }
+.home-grid { grid-template-areas:"balance" "metrics" "bills" "pace" "spending" "recent" "goal"; }
+.home-pace-chart { display:block; width:100%; margin-top:8px; }
+.pace-caption { display:flex; flex-wrap:wrap; align-items:center; gap:4px 14px; }
+.pace-caption span::before { content:""; display:inline-block; width:12px; margin:0 5px 3px 0; border-bottom:2px solid var(--accent); }
+.pace-caption span + span::before { border-bottom:2px dashed var(--muted); }
+.pace-note { margin:5px 0 0; }
+.home-bills.compact { padding-block:10px; }
+.home-bills.compact .home-card-title { margin-bottom:0; }
+.home-next-bill { padding-top:7px; margin-top:4px; border-top:1px solid var(--line); }
+.home-recent .item { min-height:44px; }
+@media (min-width:860px) {
+  #app .home-grid {
+    grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);
+    grid-template-areas:"balance metrics" "pace spending" "bills recent" "goal recent";
+    gap:12px;
+  }
+  #app .home-grid .home-hero { padding:16px 20px; }
+  #app .home-grid .home-hero h1 { font-size:clamp(1.9em,3.4vw,2.55em); margin:.08em 0 .18em; }
+  #app .home-grid .home-details-button { min-height:36px; }
+  #app .home-grid .home-metric { padding:14px; }
+  #app .home-grid .home-metrics { gap:10px; }
+  #app .home-grid .home-metric strong { font-size:clamp(1.1em,2vw,1.48em); }
+}
 .settings-intro { margin:5px 0 10px; font-size:1.08em; }
 .settings-page { max-width:none; display:grid; gap:clamp(12px,1.4vw,24px); }
 .settings-column { display:contents; }
@@ -624,7 +654,7 @@ button.home-metric:hover { border-color:var(--accent); }
 .tip.year-tip .good { color:#87ebbd; }
 .tip.year-tip .bad { color:#ffac9e; }
 @media (min-width:860px) {
-  #app .budget-shell { --rail:clamp(192px,18vw,300px); padding-left:var(--rail); }
+  #app .budget-shell { --rail:clamp(185px,16vw,220px); padding-left:var(--rail); }
   #app .topin, #app .fnav { width:var(--rail); }
   #app .topin { padding-inline:clamp(14px,1.4vw,24px); }
   #app .fnav { padding-inline:clamp(14px,1.4vw,24px); }
@@ -647,8 +677,8 @@ button.home-metric:hover { border-color:var(--accent); }
   .settings-management button { min-height:51px; }
   #app .topin .brand { font-size:1.55em; }
   #app .topin .bsel { min-height:52px; font-size:1.1em; }
-  #app .fnav { padding-top:158px; }
-  #app .fnav button { min-height:56px; font-size:1.12em; }
+  #app .fnav { padding-top:142px; }
+  #app .fnav button { min-height:46px; font-size:1.02em; }
   #app .head:has(+ main .year-page) .nav .gb { width:53px; height:53px; }
   #app .head:has(+ main .year-page) .nav .lbl { font-size:2.2em; }
   .year-page .year-hero .year-svg { margin-top:5px; }
@@ -671,11 +701,11 @@ button.home-metric:hover { border-color:var(--accent); }
 <div class="scrim" id="scrim" hidden></div>
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script src="config.js?v=20261122v"></script>
-<script src="calculations.js?v=20261122v"></script>
+<script src="config.js?v=20261123a"></script>
+<script src="calculations.js?v=20261123a"></script>
 <script>
 "use strict";
-const APP_VERSION = "20261122v";
+const APP_VERSION = "20261123a";
 // demo mode: no Firebase config, or ?demo on a local test server (never touches the real account)
 const LOCAL = !window.BUDGET_FIREBASE || (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && /[?&]demo\b/.test(location.search));
 
@@ -765,7 +795,7 @@ const cats = () => (B()?.categories?.length ? B().categories : DEFAULT_CATS);
 const cat = id => cats().find(c => c.id === id) || { id, emoji: "📦", name: "Other", color: "#64748b" };
 const {
   num, r2, sum, monthItems, goalMoves, firstMonth, totals, carryIn,
-  limitsFor, safeToSpend, outByCat, forecast, billsPlan, goalSaved, goalMonths, clearCarryCache,
+  limitsFor, safeToSpend, spendingPace, outByCat, forecast, billsPlan, goalSaved, goalMonths, clearCarryCache,
 } = makeBudgetCalculations({ state: S, budget: B, category: cat, today, thisMonth });
 const w = p => { (p && p.catch ? p : Promise.resolve()).catch(e => { console.error(e); toast("Couldn't save: " + (e.code || e.message || e)); }); return p; };
 const myName = () => S.profile.name || (S.user?.email || "").split("@")[0] || "Me";
@@ -996,6 +1026,9 @@ function gauge(segs, total) {
 function renderMonth() {
   const m = S.month, t = totals(m), items = monthItems(m), l = look(), b = B();
   if (S.categoryDetail !== null) return renderCategoryDetail(m, items, S.categoryDetail);
+  if (S.sub === "transactions") return `<section class="category-detail">
+    <button class="lk" data-act="sub" data-v="summary">‹ Back to Home</button><h1 class="details-heading" tabindex="-1">Transactions</h1>
+    <div class="card flat">${recentTransactions(m, items).map(i => homeTransactionRow(i, m)).join("") || '<p class="muted small">No transactions this month.</p>'}</div></section>`;
   if (!S.entries.length && !S.goals.length) return `<div class="card welcome">
     <div class="e">👋</div><h2 style="margin:6px 0">Let's set up ${esc(b?.name || "your budget")}</h2>
     <p class="muted">Add your income and your regular bills once. Bills that repeat show up every month on their own — you just tick them off when they're paid.</p>
@@ -1006,10 +1039,77 @@ function renderMonth() {
     : renderSummary(m, t, items);
 }
 
+function recentTransactions(m, items) {
+  if (m > thisMonth()) return [];
+  const day = m === thisMonth() ? today().getDate() : daysIn(m);
+  const orderDay = i => {
+    if (i.due) return Math.min(i.due, daysIn(m));
+    const added = i.createdAt ? isoDay(new Date(i.createdAt)) : "";
+    return added.startsWith(m + "-") ? Number(added.slice(8)) : 0;
+  };
+  return items.filter(i => !i.skipped && (i.type !== "bill" || i.paid) && (!i.due || orderDay(i) <= day))
+    .sort((a, b) => orderDay(b) - orderDay(a) || (b.createdAt || 0) - (a.createdAt || 0));
+}
+
+function homeTransactionRow(i, m) {
+  const c = cat(i.category);
+  const details = i.due ? ` · ${i.type === "bill" ? "Due " : ""}${shortBillDate(m, i.due)}` : " · No date set";
+  return `<button class="home-spend-row" data-act="edit" data-id="${esc(i.id)}">
+    <span class="ci" aria-hidden="true">${esc(c.emoji)}</span><span><b>${esc(i.name)}</b><br><span class="muted small">${TYPES[i.type]}${esc(details)}</span></span>
+    <span>${money(i.amt)} <span aria-hidden="true">›</span></span></button>`;
+}
+
+function shortBillDate(m, day) {
+  if (!day) return monthName(m, { month:"short", year:"numeric" });
+  return new Date(+m.slice(0, 4), +m.slice(5) - 1, Math.min(day, daysIn(m))).toLocaleDateString("en-GB", { day:"numeric", month:"short" });
+}
+
+function nextScheduledBill(m) {
+  const current = mi(m);
+  const candidates = new Set(Array.from({ length:12 }, (_, index) => current + index + 1));
+  for (const e of S.entries) if (e.type === "bill" && e.start && mi(e.start) > current + 12) candidates.add(mi(e.start));
+  for (const index of [...candidates].sort((a, b) => a - b)) {
+    const month = mk(index);
+    const bill = monthItems(month).filter(i => i.type === "bill" && !i.skipped && !i.paid)
+      .sort((a, b) => (a.due || 99) - (b.due || 99))[0];
+    if (bill) return { month, bill };
+  }
+  return null;
+}
+
+function renderSpendingPace(m, items) {
+  const p = spendingPace(m, items), target = p.comparison?.label === "Monthly target";
+  const line = p.comparison?.values || [];
+  const min = Math.min(0, ...p.actual, ...line), max = Math.max(1, ...p.actual, ...line);
+  const left = S.hide ? 12 : 57;
+  const x = day => left + day / p.days * (388 - left), y = value => 96 - (value - min) / (max - min) * 86;
+  const path = values => values.map((v, day) => `${day ? "L" : "M"}${x(day).toFixed(1)} ${y(v).toFixed(1)}`).join(" ");
+  const delta = p.difference;
+  const comparisonText = delta === null ? "" : delta === 0 ? (target ? "On target to date" : "Same as last month at this point")
+    : `${money(Math.abs(delta))} ${delta < 0 ? "below" : "above"} ${target ? "target to date" : "last month at this point"}`;
+  return `<section class="card home-pace">
+    <div class="home-card-title"><h2>Spending pace</h2>${comparisonText ? `<strong class="small ${delta > 0 ? "bad" : "good"}">${comparisonText}</strong>` : ""}</div>
+    ${p.actual.length ? `<svg class="home-pace-chart" viewBox="0 0 400 118" role="img" aria-label="Cumulative spending from dated transactions">
+      ${[min, (max + min) / 2, max].map(v => `<line x1="${left}" x2="388" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/>
+      ${S.hide ? "" : `<text x="${left - 5}" y="${y(v) + 3}" text-anchor="end" fill="var(--muted)" font-size="10">${esc(money(v, {raw:true, round:true}))}</text>`}`).join("")}
+      <path d="${path(p.actual)} L${x(p.through)} ${y(0)} L${left} ${y(0)} Z" fill="var(--accent-soft)"/>
+      ${line.length ? `<path d="${path(line)}" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="5 4"/>` : ""}
+      <path d="${path(p.actual)}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>
+      <circle cx="${x(p.through)}" cy="${y(p.actual.at(-1))}" r="3" stroke="var(--accent)" stroke-width="2" fill="var(--card)"/>
+      ${[1, 8, 15, 22, p.days].map(day => `<text x="${x(day)}" y="114" text-anchor="${day === 1 ? "start" : day === p.days ? "end" : "middle"}" fill="var(--muted)" font-size="11">${day} ${esc(monthName(m, { month:"short" }))}</text>`).join("")}
+    </svg>
+    <div class="pace-caption muted small"><span>Dated spending · ${money(p.actual.at(-1))}</span>${p.comparison ? `<span>${p.comparison.label}</span>` : ""}</div>`
+    : '<p class="muted small">Add dates to spending entries to see how it builds through the month.</p>'}
+    ${p.undated || (p.comparison && p.priorUndated) ? '<p class="pace-note muted small">Entries without a date are included in the monthly total, but left out of this chart.</p>' : ""}
+  </section>`;
+}
+
 function renderSummary(m, t, items) {
   const upcoming = items.filter(i => i.type === "bill" && !i.skipped && !i.paid)
     .sort((a, b) => (a.due || 99) - (b.due || 99)).slice(0, 3);
   const safe = safeToSpend(m);
+  const next = upcoming.length ? null : nextScheduledBill(m);
+  const recent = recentTransactions(m, items).slice(0, 4);
   const spending = {};
   for (const i of items) if (i.type === "spend" && !i.skipped) spending[i.category] = r2((spending[i.category] || 0) + i.amt);
   const categories = Object.entries(spending).filter(([, value]) => value > 0).sort((a, b) => b[1] - a[1]);
@@ -1049,12 +1149,15 @@ function renderSummary(m, t, items) {
         <span class="muted small">${safe ? `Per day · ${safe.days} day${safe.days === 1 ? "" : "s"} left` : "Bills, spending and savings included"}</span>
       </section>
     </div>
-    <section class="card">
-      <div class="home-card-title"><h2>Upcoming bills</h2><button class="lk" data-act="sub" data-v="details" data-to="billsCard">View bills</button></div>
+    <section class="card home-bills ${billRows ? "" : "compact"}">
+      <div class="home-card-title"><h2>${billRows ? "Upcoming bills" : t.billCount ? "All bills paid" : "No bills this month"}</h2><button class="lk" data-act="sub" data-v="details" data-to="billsCard">View bills</button></div>
       ${billRows ? `<div class="home-bill-head" aria-hidden="true"><span>Bill</span><span>Due</span><span>Amount</span><span>Paid</span></div>${billRows}`
-        : `<p class="muted small">${t.billCount ? "All bills are paid for this month." : "No bills this month."}</p>`}
+        : next ? `<button class="home-spend-row home-next-bill" data-act="ymonth" data-m="${next.month}">
+          <span class="ci" aria-hidden="true">${esc(cat(next.bill.category).emoji)}</span><span><b>${esc(next.bill.name)}</b><br><span class="muted small">Next bill · ${esc(shortBillDate(next.month, next.bill.due))}</span></span>
+          <span>${money(next.bill.amt)} <span aria-hidden="true">›</span></span></button>` : ""}
     </section>
-    <section class="card">
+    ${renderSpendingPace(m, items)}
+    <section class="card home-spending">
       <div class="home-card-title"><h2>Spending this month</h2><b>${money(t.spend)}</b></div>
       ${top.length ? top.map(([id, value]) => {
         const c = cat(id);
@@ -1063,7 +1166,11 @@ function renderSummary(m, t, items) {
           <span class="thin" aria-hidden="true"><i style="width:${100 * value / sum(categories, row => row[1])}%"></i></span></button>`;
       }).join("") : '<p class="muted small">No spending recorded this month.</p>'}
     </section>
-    ${goal ? `<section class="card">
+    <section class="card home-recent">
+      <div class="home-card-title"><h2>Recent transactions</h2><button class="lk" data-act="sub" data-v="transactions">View all</button></div>
+      ${recent.length ? recent.map(i => homeTransactionRow(i, m)).join("") : '<p class="muted small">No completed transactions to show this month.</p>'}
+    </section>
+    ${goal ? `<section class="card home-goal">
       <div class="home-card-title"><h2>${esc(goal.name)}</h2><button class="lk" data-act="gview" data-id="${esc(goal.id)}">View goal</button></div>
       <b>${money(goalSaved(goal))}</b> <span class="muted small">of ${money(num(goal.target))}</span>
       <div class="mbar" aria-hidden="true"><i style="width:${Math.max(0, goalSaved(goal) / num(goal.target) * 100)}%"></i></div>
@@ -1750,6 +1857,7 @@ function renderSettings() {
       <label class="f"><span>Currency</span><select id="bCur">${CURRENCIES.map(c => `<option ${c === (b.currency || "EUR") ? "selected" : ""}>${c}</option>`).join("")}</select></label>
       <label class="f"><span>Number style</span><select id="bNum">${opt(Object.fromEntries(Object.entries(NUMSTYLES).map(([k, v]) => [k, v[1]])), b.numStyle || "dot")}</select></label>
     </div>
+    <label class="f"><span>Monthly spending target (optional)</span><input id="bTarget" inputmode="decimal" placeholder="Compare with last month" value="${b.spendingTarget > 0 ? esc(String(num(b.spendingTarget)).replace(".", b.numStyle === "comma" ? "." : ",")) : ""}"></label>
     <label class="check"><input type="checkbox" id="bCarry" ${b.carry ? "checked" : ""}> Carry what's left over into the next month</label>
     </section>` : ""}
     ${b?.kind === "shared" ? `<section class="card settings-panel"><h2>People</h2>
@@ -1801,8 +1909,15 @@ function bindSettings(sh) {
     sh.querySelector("#sSort").onchange = ev => saveLook({ billSort: ev.target.value });
     sh.querySelector("#sHide").onchange = ev => saveLook({ hideOnStart: ev.target.checked });
     if (b) {
-      sh.querySelector("#bSave").onclick = () => { w(Store.updateBudget(b.id, { name: sh.querySelector("#bN").value.trim() || b.name, emoji: sh.querySelector("#bE").value.trim() || "💰",
-        currency: sh.querySelector("#bCur").value, numStyle: sh.querySelector("#bNum").value, carry: sh.querySelector("#bCarry").checked })); logAct("settings"); toast("Budget saved"); };
+      sh.querySelector("#bSave").onclick = () => {
+        const targetInput = sh.querySelector("#bTarget");
+        const target = num(targetInput.value);
+        if (targetInput.value.trim() && target <= 0) { toast("Enter a positive spending target or leave it blank"); targetInput.focus(); return; }
+        w(Store.updateBudget(b.id, { name: sh.querySelector("#bN").value.trim() || b.name, emoji: sh.querySelector("#bE").value.trim() || "💰",
+          currency: sh.querySelector("#bCur").value, numStyle: sh.querySelector("#bNum").value, carry: sh.querySelector("#bCarry").checked,
+          spendingTarget: target || null }));
+        logAct("settings"); toast("Budget saved");
+      };
       sh.querySelector("#bCats").onclick = openCats;
       sh.querySelector("#bLims").onclick = openLimits;
       sh.querySelector("#bAct").onclick = openActivity;
@@ -1872,7 +1987,7 @@ function download(name, text, type) {
 const fileSafe = s => String(s).replace(/[^\w-]+/g, "-").replace(/^-|-$/g, "") || "budget";
 function backupData() {
   const b = B();
-  return { app: "budget", format: 1, exported: new Date().toISOString(), budget: { name: b.name, emoji: b.emoji, currency: b.currency, numStyle: b.numStyle, carry: !!b.carry, categories: cats(), limits: b.limits || {} },
+  return { app: "budget", format: 1, exported: new Date().toISOString(), budget: { name: b.name, emoji: b.emoji, currency: b.currency, numStyle: b.numStyle, carry: !!b.carry, categories: cats(), limits: b.limits || {}, spendingTarget: num(b.spendingTarget) || null },
     entries: S.entries, months: S.months, goals: S.goals };
 }
 function isBackup(d) { return !!d && d.app === "budget" && Array.isArray(d.entries); }
@@ -1884,6 +1999,7 @@ function restoreData(d) {
   for (const [m, md] of Object.entries(d.months || {})) if (/^\d{4}-\d{2}$/.test(m) && md) ps.push(Store.setMonth(S.bid, m, md));
   if (d.budget?.categories?.length) ps.push(Store.replaceBudgetField(S.bid, "categories", d.budget.categories));
   if (d.budget?.limits && typeof d.budget.limits === "object") ps.push(Store.replaceBudgetField(S.bid, "limits", d.budget.limits));
+  if (d.budget && Object.hasOwn(d.budget, "spendingTarget")) ps.push(Store.updateBudget(S.bid, { spendingTarget: Math.max(0, num(d.budget.spendingTarget)) || null }));
   ps.forEach(w);
   return Promise.all(ps);
 }

@@ -135,6 +135,33 @@ function makeBudgetCalculations({ state, budget, category, today, thisMonth }) {
     const days = daysIn(m) - today().getDate() + 1;
     return { perDay: r2(Math.max(0, totals(m).left) / days), days };
   }
+  function spendingPace(m, items) {
+    const days = daysIn(m);
+    const through = m === thisMonth() ? today().getDate() : m < thisMonth() ? days : 0;
+    const daily = (list, length) => {
+      const amounts = Array(length + 1).fill(0);
+      let dated = 0, undated = 0;
+      for (const item of list) {
+        if (item.type !== "spend" || item.skipped) continue;
+        if (!item.due) { undated++; continue; }
+        const day = Math.min(item.due, length);
+        amounts[day] += cents(item.amt);
+        if (day <= through) dated++;
+      }
+      let running = 0;
+      return { values: amounts.map(amount => (running += amount) / 100), dated, undated };
+    };
+    const current = daily(items, days);
+    const target = num(budget()?.spendingTarget);
+    const prev = mk(mi(m) - 1);
+    const lastMonth = target > 0 ? null : daily(monthItems(prev), daysIn(prev));
+    const comparison = target > 0
+      ? { label:"Monthly target", values:Array.from({ length:days + 1 }, (_, day) => r2(target * day / days)) }
+      : lastMonth?.dated && current.dated ? { label:"Last month", values:lastMonth.values.slice(0, days + 1) } : null;
+    const actual = current.dated ? current.values.slice(0, through + 1) : [];
+    const difference = actual.length && comparison ? r2(actual.at(-1) - comparison.values[Math.min(through, comparison.values.length - 1)]) : null;
+    return { days, through, actual, comparison, difference, undated:current.undated, priorUndated:lastMonth?.undated || 0 };
+  }
   // bills + spending per category in a month (skipped items left out)
   function outByCat(m) { const o = {}; for (const i of monthItems(m)) if (!i.skipped && i.type !== "income") o[i.category] = r2((o[i.category] || 0) + i.amt); return o; }
   // month-end forecast (this month only): what is likely left once the usual spending for the rest of the month happens.
@@ -169,7 +196,7 @@ function makeBudgetCalculations({ state, budget, category, today, thisMonth }) {
 
   return {
     num, r2, sum, monthItems, goalMoves, firstMonth, totals, carryIn,
-    limitsFor, safeToSpend, outByCat, forecast, billsPlan, goalSaved, goalMonths,
+    limitsFor, safeToSpend, spendingPace, outByCat, forecast, billsPlan, goalSaved, goalMonths,
     clearCarryCache: () => carryCache.clear(),
   };
 }

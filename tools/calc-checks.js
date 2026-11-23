@@ -36,6 +36,21 @@ unsubBudget && unsubBudget(); unsubBudget = null;
 NOW = "2026-11-22";
 load(FIX);
 
+const paceMonth = "2026-11";
+check("spending pace needs dated prior spending for a comparison", spendingPace(paceMonth, monthItems(paceMonth)).comparison, null);
+S.entries.push(
+  E({ type:"spend", repeat:"once", start:"2026-10", due:12, amount:30 }),
+  E({ type:"spend", repeat:"once", start:"2026-10", due:28, amount:40 }),
+  E({ type:"spend", repeat:"once", start:paceMonth, amount:12 }),
+  E({ type:"spend", repeat:"once", start:paceMonth, due:25, amount:50 }),
+);
+let pace = spendingPace(paceMonth, monthItems(paceMonth));
+check("spending pace compares the same day and excludes future and undated spending", [pace.actual.at(-1), pace.comparison.label, pace.difference, pace.undated], [0.1, "Last month", -29.9, 3]);
+B().spendingTarget = 90;
+pace = spendingPace(paceMonth, monthItems(paceMonth));
+check("spending pace prefers a prorated target when set", [pace.comparison.label, pace.comparison.values[22], pace.difference], ["Monthly target", 66, -65.9]);
+load(FIX);
+
 /* ---------- parsing amounts ---------- */
 check("parse 1.234,56", num("1.234,56"), 1234.56);
 check("parse 1,234.56", num("1,234.56"), 1234.56);
@@ -236,6 +251,12 @@ if (lesson) {
   $("main [data-v=summary]")?.click();
   $('.home-spend-row[data-id="c9"]')?.click();
   check("a Home category opens only that month's transactions", [S.month, $(".category-detail h1")?.textContent, document.querySelectorAll(".category-detail .item").length], ["2026-11", "Groceries", 3]);
+  $(".category-detail [data-v=summary]")?.click();
+  check("Home shows four recent transactions", document.querySelectorAll(".home-recent .home-spend-row").length, 4);
+  $(".home-recent [data-v=transactions]")?.click();
+  check("View all opens the selected month's full transaction list", [S.month, $(".category-detail h1")?.textContent, document.querySelectorAll(".category-detail .home-spend-row").length], ["2026-11", "Transactions", 8]);
+  check("when all bills are paid Home shows the next scheduled bill", renderSummary("2026-11", { ...totals("2026-11"), billCount:1, unpaid:0, unpaidCount:0 },
+    [E({ id:"paid", name:"Paid", type:"bill", paid:true })]).includes('class="home-spend-row home-next-bill"'), true);
 } else {
   check("the weekly form saves a full series", null, [1, 8, 15, 22, 29]);
 }
