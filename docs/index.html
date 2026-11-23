@@ -9,9 +9,9 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="preload" href="config.js?v=20261123d" as="script">
-<link rel="preload" href="calculations.js?v=20261123d" as="script">
-<script type="module" src="cloud.js?v=20261123d"></script>
+<link rel="preload" href="config.js?v=20261123e" as="script">
+<link rel="preload" href="calculations.js?v=20261123e" as="script">
+<script type="module" src="cloud.js?v=20261123e"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- the font loads without holding up the first paint -->
@@ -433,7 +433,6 @@ button.home-metric:hover { border-color:var(--accent); }
 .home-spend-row { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:4px 8px; align-items:center; width:100%; border:0; background:none; padding:9px 4px; text-align:left; border-radius:8px; }
 .home-spend-row:hover, .home-spend-row:focus-visible { background:var(--card2); }
 .home-spend-row .thin { grid-column:2/-1; margin:0; height:7px; }
-.home-spend-row .thin i { background:var(--accent); }
 .details-heading { margin:4px 0 12px; }
 #billsCard { scroll-margin-top:12px; }
 #app .fnav { background:var(--shell); border:0; }
@@ -550,6 +549,7 @@ button.home-metric:hover { border-color:var(--accent); }
 .budget-shell .home-details-button:hover { background:#217b68a6; }
 .home-metric-link { position:relative; }
 .home-metric-link > .muted:first-child { padding-right:13px; }
+.home-next-bill strong { overflow-wrap:anywhere; }
 .home-metric-chevron { position:absolute; top:12px; right:12px; color:var(--accent); font-size:1.5em; font-weight:800; line-height:1; }
 .budget-shell .month-details .lk,
 .budget-shell .month-details .bill-filters .btn,
@@ -593,7 +593,6 @@ button.home-metric:hover { border-color:var(--accent); }
 .home-stack { display:contents; }
 .home-bills.compact { padding-block:10px; }
 .home-bills.compact .home-card-title { margin-bottom:0; }
-.home-next-bill { padding-top:7px; margin-top:4px; border-top:1px solid var(--line); }
 .home-recent .item { min-height:44px; }
 @media (min-width:860px) {
   #app .home-grid {
@@ -799,11 +798,11 @@ button.home-metric:hover { border-color:var(--accent); }
 <div class="scrim" id="scrim" hidden></div>
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script src="config.js?v=20261123d"></script>
-<script src="calculations.js?v=20261123d"></script>
+<script src="config.js?v=20261123e"></script>
+<script src="calculations.js?v=20261123e"></script>
 <script>
 "use strict";
-const APP_VERSION = "20261123d";
+const APP_VERSION = "20261123e";
 // demo mode: no Firebase config, or ?demo on a local test server (never touches the real account)
 const LOCAL = !window.BUDGET_FIREBASE || (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && /[?&]demo\b/.test(location.search));
 
@@ -846,6 +845,8 @@ const DEFAULT_CATS = [
   ["out", "🚗", "Car & transport"], ["out", "🛒", "Groceries"], ["out", "🍽️", "Eating out"], ["out", "📺", "Subscriptions"],
   ["out", "💊", "Health"], ["out", "🏦", "Loans"], ["out", "🎉", "Fun & hobbies"], ["out", "👕", "Clothes"], ["out", "📦", "Other"],
 ].map(([kind, emoji, name], i) => ({ id: "c" + i, kind, emoji, name, color: PALETTE[i % PALETTE.length] }));
+const ELECTRONICS = { id:"electronics", kind:"out", emoji:"🎧", name:"Electronics", color:"#0ea5e9" };
+DEFAULT_CATS.push(ELECTRONICS);
 const TYPES = { income: "Income", bill: "Bill", spend: "Spending" };
 
 /* ---------- demo store (no Firebase): same API as Cloud, kept in this browser ---------- */
@@ -921,29 +922,36 @@ function money(n, opt = {}) {
 function insights(m) {
   const out = [], cur = outByCat(m), pm = mk(mi(m) - 1), prev = outByCat(pm), t = totals(m), p = totals(pm);
   const hasPrev = Object.keys(prev).length > 0, R = v => money(Math.abs(v), { round: true });
+  const named = id => cat(id).name.trim().toLowerCase() !== "other";
+  const compared = new Set();
   if (hasPrev) {
-    const diffs = [...new Set([...Object.keys(cur), ...Object.keys(prev)])].map(id => ({ id, d: r2((cur[id] || 0) - (prev[id] || 0)), was: prev[id] || 0 }));
-    const up = diffs.filter(x => x.d >= 20 && (x.was === 0 || x.d / x.was >= .1)).sort((a, z) => z.d - a.d)[0];
+    const diffs = [...new Set([...Object.keys(cur), ...Object.keys(prev)])].filter(named)
+      .map(id => ({ id, d:r2((cur[id] || 0) - (prev[id] || 0)), was:prev[id] || 0 }));
+    const up = diffs.filter(x => x.d >= 20 && x.was > 0 && x.d / x.was >= .1).sort((a, z) => z.d - a.d)[0];
     const down = diffs.filter(x => x.d <= -20 && x.was > 0 && -x.d / x.was >= .1).sort((a, z) => a.d - z.d)[0];
-    if (up) out.push({ key: "up:" + up.id, icon: "📈", tone: "warn", html: `Spending on <b>${esc(cat(up.id).name)}</b> is ${R(up.d)} higher than last month.` });
-    if (down) out.push({ key: "down:" + down.id, icon: "📉", tone: "good", html: `Spending on <b>${esc(cat(down.id).name)}</b> is ${R(down.d)} lower than last month.` });
-    const pct = change(t.out, p.out);
-    if (pct != null && Math.abs(pct) >= 5) out.push({ key: "out", icon: pct < 0 ? "✅" : "⚠️", tone: pct < 0 ? "good" : "warn", html: `Everything going out is <b>${pct < 0 ? "down" : "up"} ${Math.abs(pct)}%</b> on last month.` });
-    const sv = r2(t.saved - p.saved);
-    if (sv >= 20) out.push({ key: "saved", icon: "🐷", tone: "good", html: `You've saved <b>${R(sv)} more</b> than last month.` });
+    const period = m === thisMonth() ? "than in all of last month" : "than in the previous month";
+    for (const [key, entry] of [["up", up], ["down", down]]) {
+      if (!entry) continue;
+      compared.add(entry.id);
+      out.push({ key:key + ":" + entry.id, icon:"📊", tone:"", html:`<b>${esc(cat(entry.id).name)}</b> has ${R(entry.d)} ${entry.d > 0 ? "more" : "less"} recorded ${period}.` });
+    }
+    const delta = r2(t.out - p.out);
+    if (Math.abs(delta) >= 20) out.push({ key:"out", icon:"📊", tone:"", html:`Bills and spending total ${R(delta)} ${delta > 0 ? "more" : "less"} ${period}.` });
+    const saved = r2(t.saved - p.saved);
+    if (saved >= 20) out.push({ key:"saved", icon:"🐷", tone:"", html:`You've put ${R(saved)} more into savings ${period}.` });
   }
   for (const L of limitsFor(m)) {
     const f = L.used / L.limit;
     if (f > 1) out.push({ key: "over:" + L.id, icon: "🚦", tone: "bad", html: `<b>${esc(L.c.name)}</b> is ${R(L.used - L.limit)} over its limit.` });
     else if (f >= .8) out.push({ key: "near:" + L.id, icon: "⏳", tone: "warn", html: `You're at <b>${Math.round(f * 100)}%</b> of your ${esc(L.c.name)} limit.` });
   }
-  const top = Object.entries(cur).sort((a, z) => z[1] - a[1])[0];
-  if (top && t.out > 0) out.push({ key: "top:" + top[0], icon: "🏠", tone: "", html: `<b>${esc(cat(top[0]).name)}</b> takes ${Math.round(top[1] / t.out * 100)}% of everything going out this month.` });
+  const top = Object.entries(cur).filter(([id, amount]) => named(id) && amount > 0).sort((a, z) => z[1] - a[1])[0];
+  if (top && !compared.has(top[0])) out.push({ key:"top:" + top[0], icon:"📋", tone:"", html:`<b>${esc(cat(top[0]).name)}</b> is the largest named category, at ${R(top[1])} this month.` });
   // the one that leads to a decision comes first: where this month is heading
   const fc = forecast(m);
   if (fc && (fc.income || fc.bills || fc.spent)) out.unshift(fc.end >= 0
     ? { key: "fc", icon: "🎯", tone: "good", html: `You're on track to finish ${esc(monthName(m, { month: "long" }))} with <b>${R(fc.end)} left</b>.` }
-    : { key: "fc", icon: "⚠️", tone: "bad", html: `At this rate ${esc(monthName(m, { month: "long" }))} ends <b>${R(fc.end)} short</b>. Holding back on spending would close the gap.` });
+    : { key: "fc", icon: "🔮", tone: "", html: `The current estimate for ${esc(monthName(m, { month: "long" }))} is <b>${R(fc.end)} short</b>.` });
   return out.slice(0, 5);
 }
 // ---------- activity history ----------
@@ -1087,13 +1095,14 @@ function dueText(i, m) {
   return d < 0 ? `${-d} day${d < -1 ? "s" : ""} late` : d === 0 ? "due today" : d === 1 ? "tomorrow" : `in ${d} days`;
 }
 
-function itemRow(i, m) {
+function itemRow(i, m, occurrences = 1) {
   const c = cat(i.category);
   const late = i.type === "bill" && !i.paid && !i.skipped && ((m === thisMonth() && i.due && i.due < today().getDate()) || m < thisMonth());
   const meta = [];
-  if (i.due) meta.push(i.type === "bill" ? "due " + ord(i.due) : i.repeat && i.repeat !== "once" && !i.date ? "on the " + ord(i.due)
+  if (i.due && occurrences === 1) meta.push(i.type === "bill" ? "due " + ord(i.due) : i.repeat && i.repeat !== "once" && !i.date ? "on the " + ord(i.due)
     : new Date(+m.slice(0, 4), +m.slice(5) - 1, Math.min(i.due, daysIn(m))).toLocaleDateString("en-GB", { day: "numeric", month: "short" }));
   if (i.repeat && i.repeat !== "once") meta.push(REPEATS[i.repeat][0].toLowerCase());
+  if (occurrences > 1) meta.push(occurrences + " this month");
   if (i.until) meta.push("until " + monthName(i.until, { month: "short", year: "numeric" }));
   if (i.note) meta.push(i.note);
   if (B()?.kind === "shared" && i.by) meta.push("by " + whoName(i.by));
@@ -1106,7 +1115,7 @@ function itemRow(i, m) {
     ${i.type === "bill" ? `<button class="chk ${i.paid ? "on" : ""} ${late ? "late" : ""}" data-act="pay" data-id="${esc(i.paymentKey)}" title="${i.paid ? "Paid — tap to undo" : "Mark as paid"}">${ICON.tick}</button>` : ""}
     <div class="emo" style="background:${c.color}1f">${esc(c.emoji)}</div>
     <div class="main"><div class="name">${esc(i.name || c.name)}${tags.join("")}</div><div class="meta">${esc(meta.join(" · ") || c.name)}</div></div>
-    <div class="amt">${money(i.amt)}${i.changed && !i.skipped ? `<span class="was">${money(i.base)}</span>` : ""}</div>
+    <div class="amt">${money(r2(i.amt * occurrences))}${i.changed && !i.skipped ? `<span class="was">${money(r2(i.base * occurrences))}</span>` : ""}</div>
   </div>`;
 }
 
@@ -1212,7 +1221,8 @@ function renderSpendingPace(m, items) {
     </div>
     <div class="pace-caption muted small"><span class="pace-key">Dated spending · ${money(p.actual.at(-1))}</span>${p.comparison ? `<span class="pace-key pace-reference">${p.comparison.label}</span>` : "<span>No dated comparison for this point last month</span>"}</div>`
     : '<p class="muted small">Add dates to spending entries to see how it builds through the month.</p>'}
-    ${p.undated || (p.comparison && p.priorUndated) ? '<p class="pace-note muted small">Entries without a date are included in the monthly total, but left out of this chart.</p>' : ""}
+    ${p.undated ? `<p class="pace-note muted small">${p.undated} ${p.undated === 1 ? "purchase has" : "purchases have"} no date. Edit the ${p.undated === 1 ? "purchase" : "purchases"} to include ${p.undated === 1 ? "it" : "them"} in the chart.</p>` : ""}
+    ${p.comparison && p.priorUndated ? '<p class="pace-note muted small">The comparison uses dated purchases from last month.</p>' : ""}
   </section>`;
 }
 
@@ -1250,11 +1260,15 @@ function renderSummary(m, t, items) {
       <button class="lk home-details-button" data-act="sub" data-v="details">View month details <span aria-hidden="true">→</span></button>
     </section>
     <div class="home-metrics">
-      <button class="card home-metric home-metric-link" data-act="sub" data-v="details" data-to="billsCard" data-filter="unpaid">
-        <span class="muted">Still to pay</span><strong>${money(t.unpaid)}</strong>
-        <span class="muted small">${t.unpaidCount ? `${t.unpaidCount} bill${t.unpaidCount === 1 ? "" : "s"} outstanding` : t.billCount ? "All bills paid" : "No bills this month"}</span>
+      ${next ? `<button class="card home-metric home-metric-link home-next-bill" data-act="ymonth" data-m="${next.month}" data-to="billsCard">
+        <span class="muted">Next bill</span><strong>${esc(next.bill.name)}</strong>
+        <span class="muted small">${esc(shortBillDate(next.month, next.bill.due))} · ${money(next.bill.amt)}</span>
         <span class="home-metric-chevron" aria-hidden="true">›</span>
-      </button>
+      </button>` : `<button class="card home-metric home-metric-link" data-act="sub" data-v="details" data-to="billsCard" data-filter="unpaid">
+        <span class="muted">Still to pay</span><strong>${money(t.unpaid)}</strong>
+        ${t.unpaidCount ? `<span class="muted small">${t.unpaidCount} bill${t.unpaidCount === 1 ? "" : "s"} outstanding</span>` : ""}
+        <span class="home-metric-chevron" aria-hidden="true">›</span>
+      </button>`}
       <section class="card home-metric">
         <span class="muted">${safe ? "Safe to spend" : "Left after everything"}</span>
         <strong>${money(safe ? safe.perDay : t.left)}</strong>
@@ -1265,10 +1279,7 @@ function renderSummary(m, t, items) {
     ${renderSpendingPace(m, items)}
     <section class="card home-bills ${billRows ? "" : "compact"}">
       <div class="home-card-title"><h2>${billRows ? "Upcoming bills" : t.billCount ? "All bills paid" : "No bills this month"}</h2><button class="lk" data-act="sub" data-v="details" data-to="billsCard">View bills</button></div>
-      ${billRows ? `<div class="home-bill-head" aria-hidden="true"><span>Bill</span><span>Due</span><span>Amount</span><span>Paid</span></div>${billRows}`
-        : next ? `<button class="home-spend-row home-next-bill" data-act="ymonth" data-m="${next.month}">
-          <span class="ci" aria-hidden="true">${esc(cat(next.bill.category).emoji)}</span><span><b>${esc(next.bill.name)}</b><br><span class="muted small">Next bill · ${esc(shortBillDate(next.month, next.bill.due))}</span></span>
-          <span>${money(next.bill.amt)} <span aria-hidden="true">›</span></span></button>` : ""}
+      ${billRows ? `<div class="home-bill-head" aria-hidden="true"><span>Bill</span><span>Due</span><span>Amount</span><span>Paid</span></div>${billRows}` : ""}
     </section>
     ${goal ? `<section class="card home-goal">
       <div class="home-card-title"><h2>${esc(goal.name)}</h2><button class="lk" data-act="gview" data-id="${esc(goal.id)}">View goal</button></div>
@@ -1283,7 +1294,7 @@ function renderSummary(m, t, items) {
         const c = cat(id);
         return `<button class="home-spend-row" data-act="category-detail" data-id="${esc(id)}" aria-label="View transactions for ${esc(c.name)}"><span class="ci" aria-hidden="true">${esc(c.emoji)}</span>
           <b>${esc(c.name)}</b><span>${money(value)} <span aria-hidden="true">›</span></span>
-          <span class="thin" aria-hidden="true"><i style="width:${100 * value / sum(categories, row => row[1])}%"></i></span></button>`;
+          <span class="thin" aria-hidden="true"><i style="width:${100 * value / sum(categories, row => row[1])}%;background:${esc(c.color)}"></i></span></button>`;
       }).join("") : '<p class="muted small">No spending recorded this month.</p>'}
     </section>
     <section class="card home-recent">
@@ -1321,7 +1332,7 @@ function renderMonthInsights(m, t, b) {
     <div class="ttl"><b>This month's money</b><span class="muted small">${Math.round(frac * 100)}% used</span></div>
     <div class="mrow"><span><span class="k">Going out</span><br><span class="v">${money(used)}</span></span><span style="text-align:right"><span class="k">Coming in</span><br><span class="v">${money(pot)}</span></span></div>
     <div class="mbar"><i style="width:${frac * 100}%;${t.left < 0 ? "background:var(--bad)" : ""}"></i></div>
-    ${prev.income || prev.out ? `<div class="muted small" style="margin-bottom:6px">Last month: ${money(prev.out + prev.saved, { round: true })} out of ${money(prev.income + Math.max(0, prev.carry), { round: true })} · ${money(prev.left, { round: true })} left ${chip(change(t.left, prev.left), false)}</div>` : ""}
+    ${prev.income || prev.out ? `<div class="muted small" style="margin-bottom:6px">Last month: ${money(prev.out + prev.saved, { round: true })} out of ${money(prev.income + Math.max(0, prev.carry), { round: true })} · ${money(prev.left, { round: true })} left</div>` : ""}
     <div class="small" style="font-weight:600">${t.left >= 0 ? `<b class="good">${money(t.left)}</b> left after bills, spending and savings.` : `<b class="bad">${money(-t.left)}</b> more going out than coming in.`}</div>
   </div>`;
 
@@ -1389,7 +1400,13 @@ function renderCalendar(m, items) {
 }
 
 function renderDetails(m, t, items, l, b) {
-  const inc = items.filter(i => i.type === "income").sort((a, z) => z.amt - a.amt);
+  const income = new Map();
+  for (const item of items.filter(i => i.type === "income")) {
+    const group = income.get(item.id);
+    if (group) group.count++;
+    else income.set(item.id, { item, count:1 });
+  }
+  const inc = [...income.values()].sort((a, z) => z.item.amt * z.count - a.item.amt * a.count);
   const sorters = { due: (a, z) => (a.due || 99) - (z.due || 99) || a.name.localeCompare(z.name), amount: (a, z) => z.amt - a.amt, name: (a, z) => (a.name || "").localeCompare(z.name || ""), unpaid: (a, z) => a.paid - z.paid || (a.due || 99) - (z.due || 99) };
   const bills = items.filter(i => i.type === "bill").sort(sorters[l.billSort] || sorters.due);
   const spend = items.filter(i => i.type === "spend").sort(spendingOrder);
@@ -1399,8 +1416,8 @@ function renderDetails(m, t, items, l, b) {
     return `<button class="btn sm" data-act="bill-filter" data-v="${value}" aria-pressed="${S.billFilter === value}">${label}</button>`;
   }).join("")}</div>`;
   const moves = goalMoves(m);
-  const section = (title, list, type, total, id, extra = "", filters = "", empty = "Nothing here this month.") => `<div id="${id}" tabindex="-1"><div class="sec"><span>${title} · ${money(total, { round: true })}</span><span>${extra}<button class="lk" data-act="add" data-type="${type}">+ Add</button></span></div>
-    ${filters}<div class="card flat">${list.length ? list.map(i => itemRow(i, m)).join("") : `<div class="empty">${empty}</div>`}</div></div>`;
+  const section = (title, rows, type, total, id, extra = "", filters = "", empty = "Nothing here this month.") => `<div id="${id}" tabindex="-1"><div class="sec"><span>${title} · ${money(total, { round: true })}</span><span>${extra}<button class="lk" data-act="add" data-type="${type}">+ Add</button></span></div>
+    ${filters}<div class="card flat">${rows || `<div class="empty">${empty}</div>`}</div></div>`;
   let whoCard = "";
   if (b?.kind === "shared") {
     const by = {};
@@ -1430,14 +1447,14 @@ function renderDetails(m, t, items, l, b) {
   </div>
   <div class="grid two details-entries" style="margin-top:14px">
     <div class="grid">
-      ${section(S.billFilter === "unpaid" ? "Still to pay" : S.billFilter === "paid" ? "Paid bills" : "Bills", filteredBills, "bill",
+      ${section(S.billFilter === "unpaid" ? "Still to pay" : S.billFilter === "paid" ? "Paid bills" : "Bills", filteredBills.map(i => itemRow(i, m)).join(""), "bill",
         S.billFilter === "unpaid" ? t.unpaid : S.billFilter === "paid" ? sum(filteredBills, i => i.amt) : t.bills, "billsCard",
         bills.length ? `<button class="lk" data-act="sort">${({ due: "By date", amount: "By amount", name: "A–Z", unpaid: "Unpaid first" })[l.billSort] || "By date"}</button>` : "",
         billFilters, S.billFilter === "unpaid" ? "No unpaid bills this month." : S.billFilter === "paid" ? "No paid bills this month." : undefined)}
-      ${section("Spending", spend, "spend", t.spend, "spendCard")}
+      ${section("Spending", spend.map(i => itemRow(i, m)).join(""), "spend", t.spend, "spendCard")}
     </div>
     <div class="grid">
-      ${section("Income", inc, "income", t.income, "incCard", `<button class="lk" data-act="backfill" data-type="income">Earlier months</button>`)}
+      ${section("Income", inc.map(({ item, count }) => itemRow(item, m, count)).join(""), "income", t.income, "incCard", `<button class="lk" data-act="backfill" data-type="income">Earlier months</button>`)}
       ${moves.length ? `<div><div class="sec"><span>Into savings · ${money(t.saved, { round: true })}</span></div><div class="card flat">${moves.map(d => `<div class="item" data-act="gview" data-id="${esc(d.goal.id)}"><div class="emo" style="background:${d.goal.color || "#8b5cf6"}1f">${esc(d.goal.emoji || "🐷")}</div><div class="main"><div class="name">${esc(d.goal.name)}</div><div class="meta">${esc(new Date(d.d).toLocaleDateString("en-GB", { day: "numeric", month: "short" }))}${b?.kind === "shared" && d.by ? " · by " + esc(whoName(d.by)) : ""}</div></div><div class="amt">${money(num(d.a))}</div></div>`).join("")}</div></div>` : ""}
       ${whoCard}
     </div>
@@ -1718,6 +1735,7 @@ function openEntry(id, type) {
     <div class="actions"><button class="btn pri" id="save">Save</button></div>
     ${e ? `<div class="actions">${repeating && m > e.start ? `<button class="btn" id="stop">Stop from ${esc(monthName(m, { month: "short" }))} on</button>` : ""}<button class="btn dang" id="del">Delete${repeating ? " from every month" : ""}</button></div>` : ""}
   `, sh => {
+    let dayEdited = !!e;
     const sync = () => {
       sh.querySelectorAll("#tsel button").forEach(b => b.classList.toggle("on", b.dataset.t === f.type));
       const kind = f.type === "income" ? "in" : "out";
@@ -1728,6 +1746,7 @@ function openEntry(id, type) {
       const frequency = sh.querySelector("#fRep").value;
       const rep = frequency !== "once", weekly = !!repeatDays(frequency);
       const day = sh.querySelector("#fSD");
+      if (!dayEdited) day.value = f.type === "spend" && !rep && readMonthSel(sh, "fS") === thisMonth() ? String(today().getDate()) : "";
       day.options[0].disabled = weekly;
       day.required = weekly;
       const monthHint = sh.querySelector("#fMonthHint");
@@ -1736,6 +1755,7 @@ function openEntry(id, type) {
       sh.querySelector("#fStartL").textContent = weekly ? "First occurrence" : rep ? "Starting from" : (f.type === "bill" ? "Due date" : "Date");
       sh.querySelector("#fSDL").textContent = rep && !weekly ? (f.type === "bill" ? "Due on day" : f.type === "income" ? "Paid on day" : "On day") : "Day";
       sh.querySelector("#fDayHint").textContent = weekly ? "Choose the first date. Each occurrence uses the amount above."
+        : f.type === "spend" ? "Set the purchase day to include it in Spending pace."
         : rep ? "The day is optional. It repeats on that day each time." : "The day is optional. Leave it on “—” to just use the month.";
     };
     sync();
@@ -1743,6 +1763,7 @@ function openEntry(id, type) {
     sh.querySelector("#tsel").onclick = ev => { const b = ev.target.closest("button"); if (!b) return; f.type = b.dataset.t;
       if (!e) sh.querySelector("#fRep").value = f.type === "spend" ? "once" : "monthly"; sync(); };
     sh.querySelector("#fRep").onchange = sync;
+    sh.querySelector("#fSD").onchange = () => { dayEdited = true; };
     sh.querySelector("#fSM").onchange = sh.querySelector("#fSY").onchange = () => { fixDays(sh, "fS"); sync(); };
     sh.querySelector("#moreBtn").onclick = () => { const mb = sh.querySelector("#moreBox"); mb.hidden = !mb.hidden; sh.querySelector("#moreBtn").textContent = mb.hidden ? "+ More options" : "− Fewer options"; };
     sh.querySelector("#fCats").onclick = ev => { const b = ev.target.closest("[data-cat]"); if (!b) return; f.category = b.dataset.cat; sync(); };
@@ -1979,8 +2000,9 @@ function renderSettings() {
       <label class="f"><span>Currency</span><select id="bCur">${CURRENCIES.map(c => `<option ${c === (b.currency || "EUR") ? "selected" : ""}>${c}</option>`).join("")}</select></label>
       <label class="f"><span>Number style</span><select id="bNum">${opt(Object.fromEntries(Object.entries(NUMSTYLES).map(([k, v]) => [k, v[1]])), b.numStyle || "dot")}</select></label>
     </div>
-    <label class="f"><span>Monthly spending target (optional)</span><input id="bTarget" inputmode="decimal" placeholder="Compare with last month" value="${b.spendingTarget > 0 ? esc(String(num(b.spendingTarget)).replace(".", b.numStyle === "comma" ? "." : ",")) : ""}"></label>
+    <label class="f"><span>Monthly spending target (optional)</span><input id="bTarget" inputmode="decimal" placeholder="e.g. ${esc(money(500, { raw:true, round:true }))}" value="${b.spendingTarget > 0 ? esc(String(num(b.spendingTarget)).replace(".", b.numStyle === "comma" ? "." : ",")) : ""}" aria-describedby="bTargetHint"><span id="bTargetHint" class="muted small">Leave blank to compare spending pace with last month.</span></label>
     <label class="check"><input type="checkbox" id="bCarry" ${b.carry ? "checked" : ""}> Carry what's left over into the next month</label>
+    <div class="actions"><button class="btn pri" id="bSave">Save changes</button></div>
     </section>` : ""}
     ${b?.kind === "shared" ? `<section class="card settings-panel"><h2>People</h2>
 
@@ -2015,7 +2037,7 @@ function renderSettings() {
         </div>
       </section>
       ${b ? `<section class="card settings-panel">${panelHeading("Budget management", "Manage this budget and related data.", ICON.gear)}
-        <div class="settings-management">${[["bSave", "Save budget settings", ICON.save], ["bCats", "Edit categories", ICON.tag], ["bLims", "Spending limits", ICON.chart], ["bAct", "Activity history", ICON.clock]].map(([id, label, icon]) =>
+        <div class="settings-management">${[["bCats", "Edit categories", ICON.tag], ["bLims", "Spending limits", ICON.chart], ["bAct", "Activity history", ICON.clock]].map(([id, label, icon]) =>
           `<button id="${id}">${panelIcon(icon)}${label}<span aria-hidden="true">›</span></button>`).join("")}</div>
       </section>` : ""}
     </div></div>`;
@@ -2083,7 +2105,9 @@ function openCats() {
   const b = B(); let list = JSON.parse(JSON.stringify(cats()));
   const draw = sh => {
     const part = kind => list.map((c, i) => c.kind !== kind ? "" : `<div class="catrow"><input class="inp" data-i="${i}" data-k="emoji" maxlength="4" value="${esc(c.emoji)}"><input class="inp" data-i="${i}" data-k="name" maxlength="30" value="${esc(c.name)}"><button class="ib" data-del="${i}" title="Remove">✕</button></div>`).join("");
-    sh.querySelector("#cl").innerHTML = `<h4 style="margin-top:0">Money in</h4>${part("in")}<button class="btn sm" data-addk="in">+ Add</button><h4>Money out</h4>${part("out")}<button class="btn sm" data-addk="out">+ Add</button>`;
+    const hasElectronics = list.some(c => c.id === ELECTRONICS.id || (c.kind === "out" && c.name.trim().toLowerCase() === "electronics"));
+    sh.querySelector("#cl").innerHTML = `<h4 style="margin-top:0">Money in</h4>${part("in")}<button class="btn sm" data-addk="in">+ Add</button><h4>Money out</h4>${part("out")}<button class="btn sm" data-addk="out">+ Add</button>
+      ${hasElectronics ? "" : '<button class="btn sm" data-electronics>+ Electronics</button>'}`;
   };
   openSheet(`${head("Categories")}<p class="muted small" style="margin-top:-6px">Tap an icon to change it (any emoji works). Changes apply to “${esc(b.name)}”.</p><div id="cl"></div>
     <div class="actions"><button class="btn pri" id="cS">Save categories</button><button class="btn" id="cR">Reset to defaults</button></div>`, sh => {
@@ -2094,6 +2118,7 @@ function openCats() {
       if (d) { const c = list[d.dataset.del]; const used = S.entries.filter(e => e.category === c.id).length;
         if (used && !confirm(`${used} item${used > 1 ? "s use" : " uses"} “${c.name}”. They'll show as “Other”. Remove it?`)) return; list.splice(d.dataset.del, 1); draw(sh); }
       if (a) { list.push({ id: "c" + rid(), kind: a.dataset.addk, emoji: "🏷️", name: "", color: PALETTE[list.length % PALETTE.length] }); draw(sh); sh.querySelector(`#cl [data-i="${list.length - 1}"][data-k=name]`).focus(); }
+      if (ev.target.closest("[data-electronics]")) { list.push({ ...ELECTRONICS }); draw(sh); sh.querySelector("#cS").focus(); }
     });
     sh.querySelector("#cS").onclick = () => { list = list.filter(c => c.name.trim()).map(c => ({ ...c, name: c.name.trim(), emoji: c.emoji.trim() || "🏷️" }));
       w(Store.replaceBudgetField(b.id, "categories", list)); logAct("cats"); closeSheet(); toast("Categories saved"); };
@@ -2271,7 +2296,12 @@ document.addEventListener("click", ev => {
     prev: () => { if (S.view === "year") S.year--; else S.month = mk(mi(S.month) - 1); S.calDay = null; render(); },
     next: () => { if (S.view === "year") S.year++; else S.month = mk(mi(S.month) + 1); S.calDay = null; render(); },
     now: () => { S.month = thisMonth(); S.year = today().getFullYear(); render(); },
-    ymonth: () => { S.month = t.dataset.m; S.view = "month"; S.sub = "details"; S.billFilter = "all"; render(); window.scrollTo(0, 0); },
+    ymonth: () => {
+      S.month = t.dataset.m; S.view = "month"; S.sub = "details"; S.billFilter = "all"; S.calDay = null; render();
+      const section = t.dataset.to && document.getElementById(t.dataset.to);
+      if (section) { section.focus({ preventScroll:true }); section.scrollIntoView({ block:"start" }); }
+      else window.scrollTo(0, 0);
+    },
     add: () => openEntry(null, t.dataset.type),
     quick: openQuick,
     edit: () => openEntry(t.dataset.id),

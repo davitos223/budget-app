@@ -138,6 +138,10 @@ check("forecast with no history uses this month's pace (20,29 in 22 days → 7,3
 S.entries.push(E({ id: "old", type: "spend", name: "Old shop", amount: 300, repeat: "once", start: "2026-10", category: "c9" })); S.dataStamp++; clearCarryCache();
 check("forecast uses the usual monthly spending when there is history", (({ more, end, usual }) => ({ more, end, usual }))(forecast("2026-11")), { more: 279.71, end: 1406.5, usual: 300 });
 check("insights: forecast first, then utilities up, groceries down, total down, biggest cost", insights("2026-11").map(x => x.key), ["fc", "up:c5", "down:c9", "out", "top:c4"]);
+S.entries.push(E({ id:"large-other", type:"spend", name:"Large purchase", amount:3500, repeat:"once", start:"2026-11", category:"c16" }));
+const comparison = insights("2026-11").find(i => i.key === "out");
+check("thin history uses a neutral currency difference and no catch-all insights", [comparison?.tone, comparison?.html.includes("%"), insights("2026-11").some(i => i.key.endsWith(":c16"))], ["", false, false]);
+S.entries.pop();
 S.entries.pop(); S.dataStamp++; clearCarryCache();
 check("insights: forecast, utilities up 38,10 on last month, housing biggest", insights("2026-11").map(x => x.key), ["fc", "up:c5", "top:c4"]);
 check("forecast insight names the amount left (1.678,83 → 1.679 €)", insights("2026-11")[0].html.replace(/<[^>]+>/g, "").replace(/\s/g, " ").includes("1.679 € left"), true);
@@ -215,6 +219,19 @@ stopA();
 S.month = "2026-11";
 S.view = "month";
 S.sub = "details";
+openEntry(null, "spend");
+check("new spending defaults to today's date for the current month", $("#fSD").value, "22");
+$("#fSM").value = "10";
+$("#fSM").dispatchEvent(new Event("change"));
+check("changing month clears a suggested purchase day", $("#fSD").value, "");
+closeSheet();
+const recurringIncome = E({ id:"weekly-income", name:"Pocket money", type:"income", amount:10, repeat:"weekly", start:"2026-11", due:1 });
+S.entries.push(recurringIncome);
+render();
+const incomeRows = document.querySelectorAll('#incCard [data-id="weekly-income"]');
+check("weekly income is grouped into one editable row with a monthly total", [incomeRows.length, incomeRows[0]?.querySelector(".meta").textContent.includes("5 this month"),
+  incomeRows[0]?.querySelector(".amt").textContent.replace(/\s/g, "")], [1, true, "50,00€"]);
+S.entries.pop();
 openEntry(null, "bill");
 $("#fName").value = "Weekly lesson";
 $("#fAmt").value = "20";
@@ -255,8 +272,8 @@ if (lesson) {
   check("Home shows four recent transactions", document.querySelectorAll(".home-recent .home-spend-row").length, 4);
   $(".home-recent [data-v=transactions]")?.click();
   check("View all opens the selected month's full transaction list", [S.month, $(".category-detail h1")?.textContent, document.querySelectorAll(".category-detail .home-spend-row").length], ["2026-11", "Transactions", 8]);
-  check("when all bills are paid Home shows the next scheduled bill", renderSummary("2026-11", { ...totals("2026-11"), billCount:1, unpaid:0, unpaidCount:0 },
-    [E({ id:"paid", name:"Paid", type:"bill", paid:true })]).includes('class="home-spend-row home-next-bill"'), true);
+  check("when all bills are paid the Home summary tile shows the next scheduled bill", renderSummary("2026-11", { ...totals("2026-11"), billCount:1, unpaid:0, unpaidCount:0 },
+    [E({ id:"paid", name:"Paid", type:"bill", paid:true })]).includes('home-metric-link home-next-bill'), true);
 } else {
   check("the weekly form saves a full series", null, [1, 8, 15, 22, 29]);
 }
