@@ -36,6 +36,25 @@ unsubBudget && unsubBudget(); unsubBudget = null;
 NOW = "2026-11-22";
 load(FIX);
 
+check("purchase planner falls back to the monthly projection without a dated payday", purchaseBudget(),
+  { available:totals("2026-11").left, payday:null });
+load({ entries:[
+  E({ id:"salary", type:"income", amount:500, due:10, start:"2026-11", repeat:"monthly" }),
+  E({ id:"undated", type:"income", amount:900, start:"2026-11", repeat:"once" }),
+  E({ id:"spent", type:"spend", amount:75, start:"2026-11", repeat:"once" }),
+  E({ id:"bill", type:"bill", amount:100, due:5, start:"2026-12", repeat:"once" }),
+  E({ id:"after", type:"bill", amount:200, due:12, start:"2026-12", repeat:"once" }),
+], months:{}, goals:[] });
+check("purchase planner reserves bills across months without counting the upcoming payday", purchaseBudget(),
+  { available:325, payday:"2026-12-10", undatedIncome:true });
+openPurchasePlanner();
+$("#purchase-price").value = "400";
+$("#purchase-price").dispatchEvent(new Event("input"));
+check("purchase preview shows a shortfall and leaves the budget untouched",
+  [$("#purchase-result").textContent.includes("75,00"), S.entries.length], [true, 5]);
+closeSheet();
+load(FIX);
+
 const paceMonth = "2026-11";
 check("spending pace needs dated prior spending for a comparison", spendingPace(paceMonth, monthItems(paceMonth)).comparison, null);
 S.entries.push(

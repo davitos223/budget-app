@@ -135,6 +135,25 @@ function makeBudgetCalculations({ state, budget, category, today, thisMonth }) {
     const days = daysIn(m) - today().getDate() + 1;
     return { perDay: r2(Math.max(0, totals(m).left) / days), days };
   }
+  function purchaseBudget() {
+    const month = thisMonth(), nextMonth = mk(mi(month) + 1), day = today().getDate();
+    const items = [month, nextMonth].flatMap(m => monthItems(m).filter(i => !i.skipped).map(i => ({
+      ...i, month:m, date:i.due ? `${m}-${pad(Math.min(i.due, daysIn(m)))}` : null,
+    })));
+    const now = `${month}-${pad(day)}`;
+    const payday = items.filter(i => i.type === "income" && i.amt > 0 && i.date > now)
+      .map(i => i.date).sort()[0];
+    const monthly = totals(month);
+    if (!payday) return { available:monthly.left, payday:null };
+
+    const income = sum(items.filter(i => i.type === "income" && i.date && i.date <= now), i => i.amt);
+    const throughPayday = i => i.date ? i.date <= payday : i.month <= payday.slice(0, 7);
+    const outgoing = sum(items.filter(i =>
+      (i.type === "bill" && (i.paid || throughPayday(i))) || (i.type === "spend" && throughPayday(i))), i => i.amt);
+    const saved = sum([month, nextMonth].flatMap(goalMoves).filter(move => move.d <= payday), move => num(move.a));
+    return { available:r2(monthly.carry + income - outgoing - saved), payday,
+      undatedIncome:items.some(i => i.type === "income" && i.month === month && !i.date) };
+  }
   function spendingPace(m, items) {
     const days = daysIn(m);
     const through = m === thisMonth() ? today().getDate() : m < thisMonth() ? days : 0;
@@ -196,7 +215,7 @@ function makeBudgetCalculations({ state, budget, category, today, thisMonth }) {
 
   return {
     num, r2, sum, monthItems, goalMoves, firstMonth, totals, carryIn,
-    limitsFor, safeToSpend, spendingPace, outByCat, forecast, billsPlan, goalSaved, goalMonths,
+    limitsFor, safeToSpend, purchaseBudget, spendingPace, outByCat, forecast, billsPlan, goalSaved, goalMonths,
     clearCarryCache: () => carryCache.clear(),
   };
 }

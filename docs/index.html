@@ -9,9 +9,9 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="preload" href="config.js?v=20261123f" as="script">
-<link rel="preload" href="calculations.js?v=20261123f" as="script">
-<script type="module" src="cloud.js?v=20261123f"></script>
+<link rel="preload" href="config.js?v=20261123g" as="script">
+<link rel="preload" href="calculations.js?v=20261123g" as="script">
+<script type="module" src="cloud.js?v=20261123g"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- the font loads without holding up the first paint -->
@@ -415,6 +415,8 @@ body{padding-bottom:calc(120px + env(safe-area-inset-bottom))}
 .home-metric { display:flex; flex-direction:column; justify-content:center; align-items:flex-start; text-align:left; color:var(--text); min-width:0; }
 .home-metric .money { white-space:normal; }
 .home-metric strong { display:block; font-size:clamp(1.1em,3vw,1.75em); margin:4px 0; }
+.home-metric .purchase-action { min-height:44px; padding:0; text-align:left; color:var(--accent); }
+.purchase-result { min-height:42px; font-weight:700; }
 button.home-metric:hover { border-color:var(--accent); }
 .home-card-title { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:4px 10px; margin-bottom:8px; }
 .home-card-title h2, .details-heading { font-size:1.15em; margin:0; letter-spacing:-.02em; }
@@ -766,6 +768,7 @@ button.home-metric:hover { border-color:var(--accent); }
   #app .home-grid .home-hero h1 { font-size:2em; }
   #app .home-grid .home-metric { padding:10px 12px; }
   #app .home-grid .home-metric strong { font-size:1.25em; }
+  .home-metric .purchase-action { min-height:30px; }
   .home-hero .hero-totals { font-size:.9em; margin-bottom:4px; }
   .home-card-title { margin-bottom:4px; }
   .home-card-title h2 { font-size:1.04em; }
@@ -817,11 +820,11 @@ button.home-metric:hover { border-color:var(--accent); }
 <div class="scrim" id="scrim" hidden></div>
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script src="config.js?v=20261123f"></script>
-<script src="calculations.js?v=20261123f"></script>
+<script src="config.js?v=20261123g"></script>
+<script src="calculations.js?v=20261123g"></script>
 <script>
 "use strict";
-const APP_VERSION = "20261123f";
+const APP_VERSION = "20261123g";
 // demo mode: no Firebase config, or ?demo on a local test server (never touches the real account)
 const LOCAL = !window.BUDGET_FIREBASE || (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && /[?&]demo\b/.test(location.search));
 
@@ -913,7 +916,7 @@ const cats = () => (B()?.categories?.length ? B().categories : DEFAULT_CATS);
 const cat = id => cats().find(c => c.id === id) || { id, emoji: "📦", name: "Other", color: "#64748b" };
 const {
   num, r2, sum, monthItems, goalMoves, firstMonth, totals, carryIn,
-  limitsFor, safeToSpend, spendingPace, outByCat, forecast, billsPlan, goalSaved, goalMonths, clearCarryCache,
+  limitsFor, safeToSpend, purchaseBudget, spendingPace, outByCat, forecast, billsPlan, goalSaved, goalMonths, clearCarryCache,
 } = makeBudgetCalculations({ state: S, budget: B, category: cat, today, thisMonth });
 const w = p => { (p && p.catch ? p : Promise.resolve()).catch(e => { console.error(e); toast("Couldn't save: " + (e.code || e.message || e)); }); return p; };
 const myName = () => S.profile.name || (S.user?.email || "").split("@")[0] || "Me";
@@ -1292,6 +1295,7 @@ function renderSummary(m, t, items) {
         <span class="muted">${safe ? "Safe to spend" : "Left after everything"}</span>
         <strong>${money(safe ? safe.perDay : t.left)}</strong>
         <span class="muted small">${safe ? `Per day · ${safe.days} day${safe.days === 1 ? "" : "s"} left` : "Bills, spending and savings included"}</span>
+        ${safe ? '<button class="lk purchase-action" data-act="purchase">Plan a purchase ›</button>' : ""}
       </section>
     </div>
     <div class="home-stack home-primary">
@@ -1700,6 +1704,29 @@ function openSheet(html, mount) {
 }
 function closeSheet() { const sc = $("#scrim"); sc.hidden = true; sc.innerHTML = ""; document.body.classList.remove("noscroll"); }
 const head = t => `<h3>${t}<button class="ib x" data-close title="Close">✕</button></h3>`;
+function openPurchasePlanner() {
+  const plan = purchaseBudget();
+  const horizon = plan.payday ? `before payday on ${shortBillDate(plan.payday.slice(0, 7), Number(plan.payday.slice(8)))}` : "by month-end";
+  const help = plan.payday
+    ? `Based on dated income scheduled through today and budgeted expenses through payday. ${plan.undatedIncome ? "Income without a date is excluded. " : ""}Check your account balance if a payment is late.`
+    : "No upcoming payday is dated this month or next. The month-end estimate includes all income and expenses budgeted for this month.";
+  openSheet(`${head("Plan a purchase")}
+    <p class="muted small">Preview a purchase without adding spending to your budget.</p>
+    <div class="mrow"><span>Estimated balance ${esc(horizon)}</span><b>${money(plan.available)}</b></div>
+    <p class="muted small">${esc(help)}</p>
+    <label class="f"><span>Purchase price (${esc(B()?.currency || "EUR")})</span>
+      <input id="purchase-price" inputmode="decimal" autocomplete="off" placeholder="${esc(money(90, { raw:true }))}" autofocus></label>
+    <div class="box purchase-result" id="purchase-result" role="status">Enter a price to see what would be left.</div>`, sh => {
+    const input = sh.querySelector("#purchase-price"), output = sh.querySelector("#purchase-result");
+    input.oninput = () => {
+      const price = num(input.value), remaining = r2(plan.available - price);
+      if (price <= 0) { output.textContent = input.value.trim() ? "Enter a positive price." : "Enter a price to see what would be left."; return; }
+      output.innerHTML = remaining < 0
+        ? `The budget would be short by ${money(-remaining)} ${esc(horizon)}.`
+        : `You’d have ${money(remaining)} left ${esc(horizon)}.`;
+    };
+  });
+}
 let toastT;
 function toast(msg, undo) {
   const t = $("#toast");
@@ -2324,6 +2351,7 @@ document.addEventListener("click", ev => {
     },
     add: () => openEntry(null, t.dataset.type),
     quick: openQuick,
+    purchase: openPurchasePlanner,
     edit: () => openEntry(t.dataset.id),
     hide: () => { S.hide = !S.hide; render(); },
     budgets: openBudgets,
