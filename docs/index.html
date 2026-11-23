@@ -9,9 +9,9 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="preload" href="config.js?v=20261123e" as="script">
-<link rel="preload" href="calculations.js?v=20261123e" as="script">
-<script type="module" src="cloud.js?v=20261123e"></script>
+<link rel="preload" href="config.js?v=20261123f" as="script">
+<link rel="preload" href="calculations.js?v=20261123f" as="script">
+<script type="module" src="cloud.js?v=20261123f"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- the font loads without holding up the first paint -->
@@ -670,30 +670,18 @@ button.home-metric:hover { border-color:var(--accent); }
 .tip.year-tip .muted { color:#c1d9d1; }
 .tip.year-tip .good { color:#87ebbd; }
 .tip.year-tip .bad { color:#ffac9e; }
-@media (min-width:1040px) {
+@media (min-width:960px) {
   .settings-page { grid-template-columns:minmax(0,1.43fr) minmax(0,1fr); align-items:start; }
   .settings-column { display:grid; min-width:0; gap:clamp(14px,1.4vw,22px); }
   .settings-preview-card { grid-row:auto; }
+}
+@media (min-width:1040px) {
   .settings-option { grid-template-columns:6em minmax(0,1fr); align-items:center; margin-bottom:20px; }
   .settings-budget-ident { grid-template-columns:minmax(0,1fr) 5em minmax(0,1.65fr); }
   .settings-budget-ident .sharing-summary { grid-column:auto; }
 }
 @media (min-width:1200px) {
-  .settings-panel { padding:clamp(20px,1.6vw,28px); }
-  .panel-icon { width:50px; height:50px; }
-  .settings-column > .settings-panel:first-child .settings-option { margin-block:24px; }
-  .settings-column > .settings-panel:first-child .settings-option:last-child { margin-bottom:0; }
-  .look-preview { min-height:235px; }
-  .look-preview-body { padding:10px; gap:8px; }
-  .settings-management button { min-height:51px; }
-  #app .topin .brand { font-size:1.55em; }
-  #app .topin .bsel { min-height:52px; font-size:1.1em; }
-  #app .fnav button { min-height:46px; font-size:1.02em; }
-  #app .head:has(+ main .year-page) .nav .gb { width:53px; height:53px; }
-  #app .head:has(+ main .year-page) .nav .lbl { font-size:2.2em; }
-  .year-page .year-hero .year-svg { margin-top:5px; }
   .year-page .year-hero .year-legend { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
-  .year-page .year-stat { padding-block:20px; }
 }
 @media (max-width:430px) {
   .year-page .year-stat { gap:6px; }
@@ -739,6 +727,12 @@ button.home-metric:hover { border-color:var(--accent); }
 .details-calendar { grid-area:calendar; }
 .details-notes { grid-area:notes; }
 .details-calendar .cd { aspect-ratio:auto; min-height:clamp(36px,3vw,44px); border-radius:9px; }
+.calendar-key { display:flex; flex-wrap:wrap; gap:5px; margin:10px 0 0; padding:0; list-style:none; }
+.calendar-key li {
+  display:flex; align-items:center; gap:5px; padding:3px 7px; font-size:.8em;
+  border:1px solid var(--line); border-radius:6px; background:var(--card2);
+}
+.calendar-key li::before { content:""; width:10px; height:10px; border-radius:2px; background:var(--event); }
 .details-notes textarea { width:100%; }
 .details-entries > .grid > div { scroll-margin-top:105px; }
 @media (min-width:880px) {
@@ -746,8 +740,6 @@ button.home-metric:hover { border-color:var(--accent); }
   .details-shortcuts a { min-height:34px; }
 }
 @media (min-width:1200px) {
-  #app .head:has(+ main .year-page) .nav .gb { width:44px; height:44px; }
-  #app .head:has(+ main .year-page) .nav .lbl { font-size:1.75em; }
   .savings-goals { grid-template-columns:repeat(3,minmax(0,1fr)); }
 }
 @media (max-width:859px) {
@@ -782,11 +774,38 @@ button.home-metric:hover { border-color:var(--accent); }
   .budget-shell main .item .emo { width:32px; height:32px; }
   .home-spend-row { padding-block:6px; }
   .pace-plot { height:126px; }
-  .year-page .year-hero .year-total { font-size:2em; }
-  .year-page .year-total { font-size:1.65em; }
+  .year-page, .year-page > .grid, .settings-page, .settings-column { gap:10px; }
+  .year-page .ttl > b, .settings-page h2 { font-size:1.04em; }
+  .year-page .year-hero .year-total { font-size:1.85em; }
+  .year-page .year-total, .year-page .year-plan .year-total { font-size:1.45em; }
+  .year-page .kpi .kv { font-size:1.25em; }
+  .year-page .year-svg { margin-top:6px; max-height:175px; }
+  .year-page .year-hero .year-svg { max-height:78px; }
+  .year-page .year-categories .row2, .year-page .year-bills .row2 { gap:8px; padding-block:5px; }
+  .year-page .row2 .ci { width:28px; height:28px; font-size:1em; }
+  .year-page .year-stat, .year-page .year-plan-heading { gap:8px; }
+  .year-page .panel-icon, .settings-page .panel-heading .panel-icon { width:28px; height:28px; border-radius:8px; }
+  .year-page .panel-icon svg, .settings-page .panel-heading .panel-icon svg { width:17px; height:17px; }
   .savings-page .gaugecard svg { max-width:196px; }
-  .settings-title { font-size:1.75em; }
+  .settings-title { font-size:1.45em; }
   .settings-intro { margin-block:2px 4px; }
+  .settings-page .panel-heading { margin-bottom:8px; }
+  .settings-page .panel-heading p { font-size:.9em; }
+  .settings-page .f { margin-bottom:8px; }
+  .settings-page .f input:not([type=checkbox]):not([type=radio]):not([type=file]),
+  .settings-page .f select { min-height:36px; padding-block:5px; }
+  .settings-page .check { margin:5px 0 8px; }
+  .settings-page .settings-option,
+  .settings-column > .settings-panel:first-child .settings-option { margin-bottom:8px; }
+  .settings-page .settings-option .seg button { min-height:32px; padding-block:3px; }
+  .settings-page .sw { min-width:28px; min-height:28px; }
+  .settings-page .settings-management button { min-height:36px; padding-block:4px; }
+  .settings-page .settings-management .panel-icon { width:26px; height:26px; }
+  .settings-page .look-preview { min-height:0; }
+  .look-preview-rail { gap:7px; }
+  .look-preview-body { gap:4px; padding:6px; }
+  .look-preview-body .preview-tile, .look-preview-body .preview-large { padding:5px 6px; }
+  .preview-chart svg { height:24px; }
 }
 </style>
 </head>
@@ -798,11 +817,11 @@ button.home-metric:hover { border-color:var(--accent); }
 <div class="scrim" id="scrim" hidden></div>
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script src="config.js?v=20261123e"></script>
-<script src="calculations.js?v=20261123e"></script>
+<script src="config.js?v=20261123f"></script>
+<script src="calculations.js?v=20261123f"></script>
 <script>
 "use strict";
-const APP_VERSION = "20261123e";
+const APP_VERSION = "20261123f";
 // demo mode: no Firebase config, or ?demo on a local test server (never touches the real account)
 const LOCAL = !window.BUDGET_FIREBASE || (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && /[?&]demo\b/.test(location.search));
 
@@ -1381,8 +1400,9 @@ function renderCalendar(m, items) {
   for (const d of goalMoves(m)) { const day = +d.d.slice(8, 10); (byDay[day] ||= []).push({ type: "save", name: d.goal.name, amt: num(d.a), emoji: d.goal.emoji, goal: d.goal }); }
   if (S.calDay && S.calDay > dim) S.calDay = dim;
   const sel = S.calDay || (isNow ? td : null);
-  const dot = i => i.type === "income" ? "var(--accent)" : i.type === "spend" ? "var(--spend)" : i.type === "save" ? "var(--save)"
-    : (!i.paid && ((isNow && i.due < td) || m < thisMonth())) ? "var(--bad)" : "var(--out)";
+  const key = { bill:["Bill", "var(--out)"], overdue:["Overdue", "var(--bad)"], income:["Income", "var(--accent)"],
+    spend:["Spending", "var(--spend)"], save:["Savings", "var(--save)"] };
+  const dot = i => key[i.type === "bill" && !i.paid && ((isNow && i.due < td) || m < thisMonth()) ? "overdue" : i.type][1];
   const cells = [];
   for (let k = 0; k < first; k++) cells.push(`<span></span>`);
   for (let d = 1; d <= dim; d++) { const its = byDay[d] || [];
@@ -1393,7 +1413,7 @@ function renderCalendar(m, items) {
   const selLabel = sel ? new Date(y, mo - 1, sel).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }) : "";
   return `<div><div class="sec"><span>Calendar</span></div><div class="card">
     <div class="cal">${["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map(w => `<span class="wd">${w}</span>`).join("")}${cells.join("")}</div>
-    <div class="dots" style="margin-top:10px"><span><i style="background:var(--out)"></i>Bill</span><span><i style="background:var(--bad)"></i>Overdue</span><span><i style="background:var(--accent)"></i>Income</span><span><i style="background:var(--spend)"></i>Spending</span><span><i style="background:var(--save)"></i>Savings</span></div>
+    <ul class="calendar-key" aria-label="Calendar colour key">${Object.values(key).map(([label, colour]) => `<li style="--event:${colour}">${label}</li>`).join("")}</ul>
     ${sel ? `<div class="ttl" style="margin-top:14px"><b>${esc(selLabel)}</b>${list.length ? `<span class="muted small" style="font-weight:700">${(() => { const inn = sum(list.filter(i => i.type === "income"), i => i.amt), outv = sum(list.filter(i => i.type !== "income"), i => i.amt); return [inn ? `<span class="good">+${money(inn, { raw: true })}</span>` : "", outv ? `−${money(outv, { raw: true })}` : ""].filter(Boolean).join(" · "); })()}</span>` : ""}</div>${list.length ? list.map(row).join("") : `<p class="muted small" style="margin:2px 0">Nothing on this day.</p>`}` : `<p class="muted small" style="margin:12px 0 0">Tap a day to see what's on it.</p>`}
     ${noDay.length ? `<p class="muted small" style="margin:12px 0 0"><b>No set day:</b> ${noDay.slice(0, 8).map(i => esc(i.name)).join(", ")}${noDay.length > 8 ? ` and ${noDay.length - 8} more` : ""}</p>` : ""}
   </div></div>`;
@@ -1544,7 +1564,7 @@ function renderYear() {
           : `<span class="muted small">No bills planned for ${cy + 1} yet. Bills that repeat show up here automatically.</span>`}</button>`; })()}
       <div class="card year-categories"><div class="ttl"><b>Categories</b><span class="muted small">${y}</span></div>${catRows.length ? catRows.slice(0, 7).map(([id, v]) => { const c = cat(id);
         return `<div class="row2" style="cursor:default"><span class="ci" style="background:${c.color}1f">${esc(c.emoji)}</span><span class="mn"><b>${esc(c.name)}</b><span>${Math.round(v / (out || 1) * 100)}% of everything going out</span><div class="thin"><i style="width:${v / catRows[0][1] * 100}%;background:${c.color}"></i></div></span><span class="rt"><b>${money(v, { round: true })}</b></span></div>`; }).join("") : `<p class="muted small" style="margin:4px 0">No spending categories recorded in ${y} yet. Bills and spending you add show up here, biggest first.</p>`}</div>
-      <div class="card"><div class="ttl"><b>Biggest bills</b></div>${topBills.length ? topBills.map(x => { const c = cat(x.c);
+      <div class="card year-bills"><div class="ttl"><b>Biggest bills</b></div>${topBills.length ? topBills.map(x => { const c = cat(x.c);
         return `<div class="row2" style="cursor:default"><span class="ci" style="background:${c.color}1f">${esc(c.emoji)}</span><span class="mn"><b>${esc(x.name || c.name)}</b><span>${money(x.v / 12, { round: true })} a month on average</span></span><span class="rt"><b>${money(x.v, { round: true })}</b></span></div>`; }).join("") : `<p class="muted small" style="margin:4px 0">No bills recorded in ${y} yet. Each bill you add shows here with its total for the year.</p>`}</div>
     </div>
   </div>`;
