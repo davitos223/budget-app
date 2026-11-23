@@ -9,9 +9,9 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="preload" href="config.js?v=20261123a" as="script">
-<link rel="preload" href="calculations.js?v=20261123a" as="script">
-<script type="module" src="cloud.js?v=20261123a"></script>
+<link rel="preload" href="config.js?v=20261123b" as="script">
+<link rel="preload" href="calculations.js?v=20261123b" as="script">
+<script type="module" src="cloud.js?v=20261123b"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- the font loads without holding up the first paint -->
@@ -691,6 +691,59 @@ button.home-metric:hover { border-color:var(--accent); }
   .year-page .year-stat .panel-icon svg { width:17px; height:17px; }
   .year-page .year-stat .money { white-space:normal; }
 }
+.year-page, .year-page > .grid, .savings-page, .savings-page > .grid,
+.settings-page, .settings-column, .details-overview { gap:12px; }
+.year-page .card, .year-page .kpi, .savings-page .card, .settings-panel {
+  padding:clamp(12px,1.15vw,18px);
+}
+.year-page .year-total { font-size:clamp(1.55em,2.3vw,2.2em); margin:4px 0; }
+.year-page .year-hero .year-total { font-size:clamp(1.9em,3vw,2.75em); }
+.year-page .kpi .kv { margin-top:4px; }
+.year-page .year-categories .row2 { padding-block:7px; }
+.year-page .year-categories .ci, .savings-page .gcard .emo { width:34px; height:34px; }
+.savings-summary { align-items:stretch; }
+.savings-page .gaugecard svg { max-width:226px; }
+.savings-page .gaugecard .gl { margin-top:-30px; }
+.savings-page .gcard .big { margin-top:7px; font-size:1.3em; }
+.savings-page .gcard .ft { gap:8px; }
+.savings-page .gcard .ft .btn { flex:none; min-height:36px; }
+.goal-progress { margin-left:auto; border-radius:999px; background:var(--accent-soft); padding:3px 8px; }
+.savings-breakdown-row { padding-block:7px; }
+.savings-breakdown-row > :first-child { overflow-wrap:anywhere; }
+.settings-title { font-size:clamp(1.55em,2.5vw,2.2em); }
+.settings-intro { font-size:.95em; }
+.settings-page .panel-heading { align-items:center; gap:9px; margin-bottom:12px; }
+.settings-page .panel-heading h2 { margin:0; }
+.settings-page .panel-heading .panel-icon { width:36px; height:36px; border-radius:10px; }
+.settings-page .panel-heading .panel-icon svg { width:19px; height:19px; }
+.settings-page .settings-option,
+.settings-column > .settings-panel:first-child .settings-option { margin:0 0 11px; }
+.settings-column > .settings-panel:first-child .settings-option:last-child { margin-bottom:0; }
+.settings-page .settings-management button { min-height:44px; }
+.settings-page .look-preview { min-height:174px; }
+.details-heading { margin:0 0 8px; }
+.details-shortcuts { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 12px; }
+#app .details-shortcuts a { display:inline-flex; align-items:center; min-height:40px; text-decoration:none; }
+.details-overview { grid-template-areas:"glance" "calendar" "notes"; }
+.details-glance { grid-area:glance; }
+.details-calendar { grid-area:calendar; }
+.details-notes { grid-area:notes; }
+.details-calendar .cd { aspect-ratio:auto; min-height:clamp(36px,3vw,44px); border-radius:9px; }
+.details-notes textarea { width:100%; }
+.details-entries > .grid > div { scroll-margin-top:105px; }
+@media (min-width:880px) {
+  .details-overview { grid-template-areas:"calendar glance" "calendar notes"; grid-template-rows:auto 1fr; }
+  .details-shortcuts a { min-height:34px; }
+}
+@media (min-width:1200px) {
+  #app .head:has(+ main .year-page) .nav .gb { width:44px; height:44px; }
+  #app .head:has(+ main .year-page) .nav .lbl { font-size:1.75em; }
+  .savings-goals { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+@media (max-width:859px) {
+  .savings-page .gcard .ft .btn { min-height:44px; }
+  #app .details-shortcuts a { min-height:44px; }
+}
 </style>
 </head>
 <body>
@@ -701,11 +754,11 @@ button.home-metric:hover { border-color:var(--accent); }
 <div class="scrim" id="scrim" hidden></div>
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script src="config.js?v=20261123a"></script>
-<script src="calculations.js?v=20261123a"></script>
+<script src="config.js?v=20261123b"></script>
+<script src="calculations.js?v=20261123b"></script>
 <script>
 "use strict";
-const APP_VERSION = "20261123a";
+const APP_VERSION = "20261123b";
 // demo mode: no Firebase config, or ?demo on a local test server (never touches the real account)
 const LOCAL = !window.BUDGET_FIREBASE || (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && /[?&]demo\b/.test(location.search));
 
@@ -1283,7 +1336,7 @@ function renderDetails(m, t, items, l, b) {
     return `<button class="btn sm" data-act="bill-filter" data-v="${value}" aria-pressed="${S.billFilter === value}">${label}</button>`;
   }).join("")}</div>`;
   const moves = goalMoves(m);
-  const section = (title, list, type, total, id, extra = "", filters = "", empty = "Nothing here this month.") => `<div id="${id}"><div class="sec"><span>${title} · ${money(total, { round: true })}</span><span>${extra}<button class="lk" data-act="add" data-type="${type}">+ Add</button></span></div>
+  const section = (title, list, type, total, id, extra = "", filters = "", empty = "Nothing here this month.") => `<div id="${id}" tabindex="-1"><div class="sec"><span>${title} · ${money(total, { round: true })}</span><span>${extra}<button class="lk" data-act="add" data-type="${type}">+ Add</button></span></div>
     ${filters}<div class="card flat">${list.length ? list.map(i => itemRow(i, m)).join("") : `<div class="empty">${empty}</div>`}</div></div>`;
   let whoCard = "";
   if (b?.kind === "shared") {
@@ -1302,11 +1355,17 @@ function renderDetails(m, t, items, l, b) {
       <div style="border-top:1px solid var(--line);padding-top:6px"><span style="color:var(--text);font-weight:800">Left</span>${flowMoney(t.left, false)}</div>
     </div></div></div>`;
   const notes = `<div><div class="sec">Notes for ${esc(monthName(m, { month: "long" }))}</div><div class="card"><textarea id="note" placeholder="Anything to remember this month…">${esc(md.note || "")}</textarea></div></div>`;
-  return `<div class="grid two">
-    <div class="grid">${renderCalendar(m, items)}</div>
-    <div class="grid">${glance}${notes}</div>
+  return `<nav class="details-shortcuts" aria-label="Jump to entries">
+    <a class="lk" href="#incCard">Income</a>
+    <a class="lk" href="#spendCard">Spending</a>
+    <a class="lk" href="#billsCard">Bills</a>
+  </nav>
+  <div class="grid two details-overview">
+    <div class="details-glance">${glance}</div>
+    <div class="details-calendar">${renderCalendar(m, items)}</div>
+    <div class="details-notes">${notes}</div>
   </div>
-  <div class="grid two" style="margin-top:14px">
+  <div class="grid two details-entries" style="margin-top:14px">
     <div class="grid">
       ${section(S.billFilter === "unpaid" ? "Still to pay" : S.billFilter === "paid" ? "Paid bills" : "Bills", filteredBills, "bill",
         S.billFilter === "unpaid" ? t.unpaid : S.billFilter === "paid" ? sum(filteredBills, i => i.amt) : t.bills, "billsCard",
@@ -1414,7 +1473,7 @@ function renderYear() {
 function renderGoals() {
   const gs = [...S.goals].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
   const total = sum(gs, goalSaved), target = sum(gs, g => num(g.target));
-  return `<div class="grid">
+  return `<div class="grid savings-page">
     ${gs.length ? `<div class="grid two savings-summary"><div class="card gaugecard savings-hero">${gauge(gs.map(g => ({ v: goalSaved(g), color: g.color || "var(--save)", t: g.name })), Math.max(target, total))}
       <div class="gl">Saved in total</div><div class="gv">${money(total)}</div>
       <div class="gs">${target ? `${Math.round(Math.min(1, total / target) * 100)}% of ${money(target, { round: true })} across ${gs.length} goal${gs.length > 1 ? "s" : ""}` : `${gs.length} goal${gs.length > 1 ? "s" : ""}`}</div></div>
@@ -1429,10 +1488,10 @@ function renderGoals() {
         <div class="mrow" style="margin-top:10px"><b>Total saved</b><b>${money(total)}</b></div>
       </section></div>` : ""}
     ${gs.length ? `<div class="card" data-act="billplan" style="cursor:pointer;display:flex;align-items:center;gap:12px"><span class="emo" style="background:color-mix(in srgb,#f97316 16%,transparent)">🧾</span><span style="flex:1"><b>Plan for next year's bills</b><br><span class="muted small">How much to put aside each month so next year's bills are covered</span></span><span style="color:var(--accent);font-weight:800">›</span></div>` : ""}
-    ${gs.length ? `<div class="grid two" style="align-items:stretch">${gs.map(g => {
+    ${gs.length ? `<div class="grid two savings-goals" style="align-items:stretch">${gs.map(g => {
       const s = goalSaved(g), tg = num(g.target), pct = tg > 0 ? Math.max(0, Math.min(100, s / tg * 100)) : 0;
       return `<div class="card gcard" data-act="gview" data-id="${esc(g.id)}">
-        <div class="top"><span class="emo" style="background:${g.color || "#8b5cf6"}1f">${esc(g.emoji || "🐷")}</span><b>${esc(g.name)}</b>${tg > 0 ? `<span class="muted small" style="margin-left:auto">${Math.round(pct)}% of goal</span>` : ""}</div>
+        <div class="top"><span class="emo" style="background:${g.color || "#8b5cf6"}1f">${esc(g.emoji || "🐷")}</span><b>${esc(g.name)}</b>${tg > 0 ? `<span class="goal-progress small">${Math.round(pct)}% of goal</span>` : ""}</div>
         <div class="big">${money(s)} ${tg ? `<span class="of">of ${money(tg, { round: true })}</span>` : ""}</div>
         ${tg ? `<div class="bar"><i style="width:${pct}%;background:${g.color || "#8b5cf6"}"></i></div>` : ""}
         ${(() => { const now = goalMonths(g, 1)[0].v; return now ? `<div class="muted small" style="margin:-2px 0 8px;font-weight:700"><span class="${now > 0 ? "good" : "bad"}">${now > 0 ? "+" : "−"}${money(Math.abs(now), { round: true })}</span> this month</div>` : ""; })()}
