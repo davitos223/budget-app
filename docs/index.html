@@ -9,9 +9,9 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="preload" href="config.js?v=20261123b" as="script">
-<link rel="preload" href="calculations.js?v=20261123b" as="script">
-<script type="module" src="cloud.js?v=20261123b"></script>
+<link rel="preload" href="config.js?v=20261123c" as="script">
+<link rel="preload" href="calculations.js?v=20261123c" as="script">
+<script type="module" src="cloud.js?v=20261123c"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- the font loads without holding up the first paint -->
@@ -568,11 +568,23 @@ button.home-metric:hover { border-color:var(--accent); }
 .home-recent { grid-area:recent; }
 .home-goal { grid-area:goal; }
 .home-grid { grid-template-areas:"balance" "metrics" "bills" "pace" "spending" "recent" "goal"; }
-.home-pace-chart { display:block; width:100%; margin-top:8px; }
+.pace-layout { display:grid; grid-template-columns:auto minmax(0,1fr); gap:4px 8px; margin-top:12px; }
+.pace-scale { display:flex; flex-direction:column; justify-content:space-between; align-items:flex-end; line-height:1; }
+.pace-plot { position:relative; height:112px; margin-block:5px; }
+.home-pace-chart { display:block; width:100%; height:100%; overflow:visible; }
+.home-pace-chart :is(line,path) { vector-effect:non-scaling-stroke; }
+.pace-marker { position:absolute; width:8px; height:8px; border:2px solid var(--accent); border-radius:50%; background:var(--card); transform:translate(-50%,-50%); }
+.pace-dates { position:relative; grid-column:2; min-height:1.4em; white-space:nowrap; }
+.pace-dates span { position:absolute; transform:translateX(-50%); }
+.pace-dates span:first-child { transform:none; }
+.pace-dates span:last-child { transform:translateX(-100%); }
 .pace-caption { display:flex; flex-wrap:wrap; align-items:center; gap:4px 14px; }
-.pace-caption span::before { content:""; display:inline-block; width:12px; margin:0 5px 3px 0; border-bottom:2px solid var(--accent); }
-.pace-caption span + span::before { border-bottom:2px dashed var(--muted); }
+.pace-caption { margin-top:8px; }
+.pace-caption .pace-key::before { content:""; display:inline-block; width:12px; margin:0 5px 3px 0; border-bottom:2px solid var(--accent); }
+.pace-caption .pace-reference::before { border-bottom:2px dashed var(--muted); }
+.pace-status { border-radius:999px; padding:3px 8px; background:var(--card2); }
 .pace-note { margin:5px 0 0; }
+.home-stack { display:contents; }
 .home-bills.compact { padding-block:10px; }
 .home-bills.compact .home-card-title { margin-bottom:0; }
 .home-next-bill { padding-top:7px; margin-top:4px; border-top:1px solid var(--line); }
@@ -744,6 +756,43 @@ button.home-metric:hover { border-color:var(--accent); }
   .savings-page .gcard .ft .btn { min-height:44px; }
   #app .details-shortcuts a { min-height:44px; }
 }
+@media (min-width:860px) {
+  #app .budget-shell { --rail:clamp(164px,12vw,182px); }
+  #app .wrap { max-width:1280px; padding-inline:20px; }
+  #app main.wrap { margin-top:12px; }
+  #app .topin { padding-top:16px; gap:8px 4px; }
+  #app .topin .brand { font-size:1.28em; }
+  #app .topin .bsel { min-height:40px; font-size:1em; }
+  #app .fnav { padding-top:112px; }
+  #app .fnav button { height:40px; min-height:40px; font-size:.94em; }
+  #app .budget-shell .nav .gb { width:36px; height:36px; }
+  #app .budget-shell .nav .lbl { font-size:1.45em; }
+  #app .desktop-add { min-height:36px; padding-block:6px; }
+  .budget-shell main .card, .year-page .kpi { padding:12px 14px; }
+  .budget-shell main .flat { padding-block:0; }
+  #app .home-grid { grid-template-areas:"balance metrics" "primary secondary"; gap:10px; }
+  .home-stack { display:grid; gap:10px; min-width:0; }
+  .home-stack > * { grid-area:auto; min-width:0; }
+  .home-primary { grid-area:primary; }
+  .home-secondary { grid-area:secondary; }
+  #app .home-grid .home-hero { padding:12px 15px; }
+  #app .home-grid .home-hero h1 { font-size:2em; }
+  #app .home-grid .home-metric { padding:10px 12px; }
+  #app .home-grid .home-metric strong { font-size:1.25em; }
+  .home-hero .hero-totals { font-size:.9em; margin-bottom:4px; }
+  .home-card-title { margin-bottom:4px; }
+  .home-card-title h2 { font-size:1.04em; }
+  .home-card-title .lk { min-height:32px; }
+  .budget-shell main .item { padding-block:7px; gap:8px; }
+  .budget-shell main .item .emo { width:32px; height:32px; }
+  .home-spend-row { padding-block:6px; }
+  .pace-plot { height:126px; }
+  .year-page .year-hero .year-total { font-size:2em; }
+  .year-page .year-total { font-size:1.65em; }
+  .savings-page .gaugecard svg { max-width:196px; }
+  .settings-title { font-size:1.75em; }
+  .settings-intro { margin-block:2px 4px; }
+}
 </style>
 </head>
 <body>
@@ -754,11 +803,11 @@ button.home-metric:hover { border-color:var(--accent); }
 <div class="scrim" id="scrim" hidden></div>
 <div class="toast" id="toast" role="status" hidden></div>
 
-<script src="config.js?v=20261123b"></script>
-<script src="calculations.js?v=20261123b"></script>
+<script src="config.js?v=20261123c"></script>
+<script src="calculations.js?v=20261123c"></script>
 <script>
 "use strict";
-const APP_VERSION = "20261123b";
+const APP_VERSION = "20261123c";
 // demo mode: no Firebase config, or ?demo on a local test server (never touches the real account)
 const LOCAL = !window.BUDGET_FIREBASE || (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && /[?&]demo\b/.test(location.search));
 
@@ -1133,25 +1182,36 @@ function nextScheduledBill(m) {
 function renderSpendingPace(m, items) {
   const p = spendingPace(m, items), target = p.comparison?.label === "Monthly target";
   const line = p.comparison?.values || [];
-  const min = Math.min(0, ...p.actual, ...line), max = Math.max(1, ...p.actual, ...line);
-  const left = S.hide ? 12 : 57;
-  const x = day => left + day / p.days * (388 - left), y = value => 96 - (value - min) / (max - min) * 86;
-  const path = values => values.map((v, day) => `${day ? "L" : "M"}${x(day).toFixed(1)} ${y(v).toFixed(1)}`).join(" ");
+  const low = Math.min(0, ...p.actual, ...line), high = Math.max(1, ...p.actual, ...line);
+  const interval = (high - low) / 3;
+  const magnitude = Math.max(1, 10 ** Math.floor(Math.log10(interval)));
+  const step = magnitude * [1, 2, 5, 10].find(n => n * magnitude >= interval);
+  const min = Math.floor(low / step) * step, max = Math.ceil(high / step) * step;
+  const ticks = Array.from({ length:(max - min) / step + 1 }, (_, i) => max - i * step);
+  const x = day => day / p.days * 100, y = value => (max - value) / (max - min) * 100;
+  const path = (values, linear = false) => values.reduce((d, v, day) => day === 0
+    ? `M0 ${y(v)}`
+    : d + (linear ? ` L${x(day)} ${y(v)}` : ` H${x(day)} V${y(v)}`), "");
   const delta = p.difference;
   const comparisonText = delta === null ? "" : delta === 0 ? (target ? "On target to date" : "Same as last month at this point")
     : `${money(Math.abs(delta))} ${delta < 0 ? "below" : "above"} ${target ? "target to date" : "last month at this point"}`;
   return `<section class="card home-pace">
-    <div class="home-card-title"><h2>Spending pace</h2>${comparisonText ? `<strong class="small ${delta > 0 ? "bad" : "good"}">${comparisonText}</strong>` : ""}</div>
-    ${p.actual.length ? `<svg class="home-pace-chart" viewBox="0 0 400 118" role="img" aria-label="Cumulative spending from dated transactions">
-      ${[min, (max + min) / 2, max].map(v => `<line x1="${left}" x2="388" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/>
-      ${S.hide ? "" : `<text x="${left - 5}" y="${y(v) + 3}" text-anchor="end" fill="var(--muted)" font-size="10">${esc(money(v, {raw:true, round:true}))}</text>`}`).join("")}
-      <path d="${path(p.actual)} L${x(p.through)} ${y(0)} L${left} ${y(0)} Z" fill="var(--accent-soft)"/>
-      ${line.length ? `<path d="${path(line)}" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="5 4"/>` : ""}
-      <path d="${path(p.actual)}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>
-      <circle cx="${x(p.through)}" cy="${y(p.actual.at(-1))}" r="3" stroke="var(--accent)" stroke-width="2" fill="var(--card)"/>
-      ${[1, 8, 15, 22, p.days].map(day => `<text x="${x(day)}" y="114" text-anchor="${day === 1 ? "start" : day === p.days ? "end" : "middle"}" fill="var(--muted)" font-size="11">${day} ${esc(monthName(m, { month:"short" }))}</text>`).join("")}
-    </svg>
-    <div class="pace-caption muted small"><span>Dated spending · ${money(p.actual.at(-1))}</span>${p.comparison ? `<span>${p.comparison.label}</span>` : ""}</div>`
+    <div class="home-card-title"><h2>Spending pace</h2>${comparisonText ? `<strong class="pace-status small ${delta > 0 ? "bad" : "good"}">${comparisonText}</strong>` : ""}</div>
+    ${p.actual.length ? `<div class="pace-layout muted small">
+      <div class="pace-scale" aria-hidden="true">${S.hide ? "" : ticks.map(v => `<span>${esc(money(v, { raw:true, round:true }))}</span>`).join("")}</div>
+      <div class="pace-plot">
+        <svg class="home-pace-chart" viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Cumulative spending from dated transactions">
+          <defs><linearGradient id="pace-fill" x2="0" y2="1"><stop stop-color="var(--accent)" stop-opacity=".28"/><stop offset="100%" stop-color="var(--accent)" stop-opacity=".03"/></linearGradient></defs>
+          ${ticks.map(v => `<line x1="0" x2="100" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/>`).join("")}
+          <path d="${path(p.actual)} V${y(0)} H0 Z" fill="url(#pace-fill)"/>
+          ${line.length ? `<path d="${path(line, target)}" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="5 4"/>` : ""}
+          <path d="${path(p.actual)}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>
+        </svg>
+        <span class="pace-marker" style="left:${x(p.through)}%;top:${y(p.actual.at(-1))}%" aria-hidden="true"></span>
+      </div>
+      <div class="pace-dates" aria-hidden="true">${[1, 8, 15, 22, p.days].map((day, i) => `<span style="left:${x(i === 0 ? 0 : day)}%">${day} ${esc(monthName(m, { month:"short" }))}</span>`).join("")}</div>
+    </div>
+    <div class="pace-caption muted small"><span class="pace-key">Dated spending · ${money(p.actual.at(-1))}</span>${p.comparison ? `<span class="pace-key pace-reference">${p.comparison.label}</span>` : "<span>No dated comparison for this point last month</span>"}</div>`
     : '<p class="muted small">Add dates to spending entries to see how it builds through the month.</p>'}
     ${p.undated || (p.comparison && p.priorUndated) ? '<p class="pace-note muted small">Entries without a date are included in the monthly total, but left out of this chart.</p>' : ""}
   </section>`;
@@ -1202,6 +1262,8 @@ function renderSummary(m, t, items) {
         <span class="muted small">${safe ? `Per day · ${safe.days} day${safe.days === 1 ? "" : "s"} left` : "Bills, spending and savings included"}</span>
       </section>
     </div>
+    <div class="home-stack home-primary">
+    ${renderSpendingPace(m, items)}
     <section class="card home-bills ${billRows ? "" : "compact"}">
       <div class="home-card-title"><h2>${billRows ? "Upcoming bills" : t.billCount ? "All bills paid" : "No bills this month"}</h2><button class="lk" data-act="sub" data-v="details" data-to="billsCard">View bills</button></div>
       ${billRows ? `<div class="home-bill-head" aria-hidden="true"><span>Bill</span><span>Due</span><span>Amount</span><span>Paid</span></div>${billRows}`
@@ -1209,7 +1271,13 @@ function renderSummary(m, t, items) {
           <span class="ci" aria-hidden="true">${esc(cat(next.bill.category).emoji)}</span><span><b>${esc(next.bill.name)}</b><br><span class="muted small">Next bill · ${esc(shortBillDate(next.month, next.bill.due))}</span></span>
           <span>${money(next.bill.amt)} <span aria-hidden="true">›</span></span></button>` : ""}
     </section>
-    ${renderSpendingPace(m, items)}
+    ${goal ? `<section class="card home-goal">
+      <div class="home-card-title"><h2>${esc(goal.name)}</h2><button class="lk" data-act="gview" data-id="${esc(goal.id)}">View goal</button></div>
+      <b>${money(goalSaved(goal))}</b> <span class="muted small">of ${money(num(goal.target))}</span>
+      <div class="mbar" aria-hidden="true"><i style="width:${Math.max(0, goalSaved(goal) / num(goal.target) * 100)}%"></i></div>
+    </section>` : ""}
+    </div>
+    <div class="home-stack home-secondary">
     <section class="card home-spending">
       <div class="home-card-title"><h2>Spending this month</h2><b>${money(t.spend)}</b></div>
       ${top.length ? top.map(([id, value]) => {
@@ -1223,11 +1291,7 @@ function renderSummary(m, t, items) {
       <div class="home-card-title"><h2>Recent transactions</h2><button class="lk" data-act="sub" data-v="transactions">View all</button></div>
       ${recent.length ? recent.map(i => homeTransactionRow(i, m)).join("") : '<p class="muted small">No completed transactions to show this month.</p>'}
     </section>
-    ${goal ? `<section class="card home-goal">
-      <div class="home-card-title"><h2>${esc(goal.name)}</h2><button class="lk" data-act="gview" data-id="${esc(goal.id)}">View goal</button></div>
-      <b>${money(goalSaved(goal))}</b> <span class="muted small">of ${money(num(goal.target))}</span>
-      <div class="mbar" aria-hidden="true"><i style="width:${Math.max(0, goalSaved(goal) / num(goal.target) * 100)}%"></i></div>
-    </section>` : ""}
+    </div>
   </div>`;
 }
 
